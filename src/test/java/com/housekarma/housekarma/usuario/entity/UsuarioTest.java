@@ -18,4 +18,13 @@ class UsuarioTest {
         assertEquals("Cruz", usuario.getApellidos());
         assertEquals("ruddy@example.com", usuario.getEmail());
     }
+
+    @Test
+    void deberiaAsignarRolAlUsuario() {
+        Usuario usuario = new Usuario();
+
+        usuario.setRol(Rol.INQUILINO);
+
+        assertEquals(Rol.INQUILINO, usuario.getRol());
+    }
 }

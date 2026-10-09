@@ -1,0 +1,49 @@
+
+package com.housekarma.housekarma.usuario.dto;
+
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class UsuarioRegistroRequestTest {
+
+    private final Validator validator =
+            Validation.buildDefaultValidatorFactory().getValidator();
+
+    @Test
+    void debeRechazarEmailInvalidoYContrasenaCorta() {
+        UsuarioRegistroRequest request = new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "correo-invalido",
+                "123",
+                null
+        );
+
+        var errores = validator.validate(request);
+
+        assertFalse(errores.isEmpty());
+        assertTrue(errores.stream().anyMatch(
+                error -> error.getPropertyPath().toString().equals("email")
+        ));
+        assertTrue(errores.stream().anyMatch(
+                error -> error.getPropertyPath().toString().equals("password")
+        ));
+    }
+
+    @Test
+    void debeAceptarDatosValidos() {
+        UsuarioRegistroRequest request = new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "ana@example.com",
+                "Password123",
+                "600123456"
+        );
+
+        assertTrue(validator.validate(request).isEmpty());
+    }
+}

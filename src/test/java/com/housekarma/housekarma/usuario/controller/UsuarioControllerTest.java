@@ -1,8 +1,10 @@
 
 package com.housekarma.housekarma.usuario.controller;
 
+import com.housekarma.housekarma.config.GlobalExceptionHandler;
 import com.housekarma.housekarma.usuario.entity.Rol;
 import com.housekarma.housekarma.usuario.entity.Usuario;
+import com.housekarma.housekarma.usuario.service.EmailYaRegistradoException;
 import com.housekarma.housekarma.usuario.service.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,7 @@ class UsuarioControllerTest {
         validator.afterPropertiesSet();
 
         mockMvc = standaloneSetup(new UsuarioController(usuarioService))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setValidator(validator)
                 .build();
     }
@@ -56,18 +59,18 @@ class UsuarioControllerTest {
                 .thenReturn(usuario);
 
         mockMvc.perform(post("/api/usuarios")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "nombre": "Ana",
-                                  "apellidos": "Garcia",
-                                  "email": "ana@example.com",
-                                  "confirmarEmail": "ana@example.com",
-                                  "password": "Password123",
-                                  "confirmarPassword": "Password123",
-                                  "telefono": "600123456"
-                                }
-                                """))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "nombre": "Ana",
+                          "apellidos": "Garcia",
+                          "email": "ana@example.com",
+                          "confirmarEmail": "ana@example.com",
+                          "password": "Password123",
+                          "confirmarPassword": "Password123",
+                          "telefono": "600123456"
+                        }
+                        """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.nombre").value("Ana"))
                 .andExpect(jsonPath("$.email").value("ana@example.com"))
@@ -76,27 +79,51 @@ class UsuarioControllerTest {
 
         verify(usuarioService).registrarUsuario(any());
     }
-    
-@Test
-void debeRechazarDatosInvalidosSinLlamarAlServicio()
-        throws Exception {
 
-    mockMvc.perform(post("/api/usuarios")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""
-                            {
-                              "nombre": "",
-                              "apellidos": "Garcia",
-                              "email": "correo-invalido",
-                              "confirmarEmail": "otro@example.com",
-                              "password": "Password123",
-                              "confirmarPassword": "Password456",
-                              "telefono": "600123456"
-                            }
-                            """))
-            .andExpect(status().isBadRequest());
+    @Test
+    void debeRechazarDatosInvalidosSinLlamarAlServicio()
+            throws Exception {
 
-    org.mockito.Mockito.verifyNoInteractions(usuarioService);
-}
+        mockMvc.perform(post("/api/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "nombre": "",
+                          "apellidos": "Garcia",
+                          "email": "correo-invalido",
+                          "confirmarEmail": "otro@example.com",
+                          "password": "Password123",
+                          "confirmarPassword": "Password456",
+                          "telefono": "600123456"
+                        }
+                        """))
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verifyNoInteractions(usuarioService);
+    }
+
+    @Test
+    void debeDevolverConflictCuandoElEmailYaExiste()
+            throws Exception {
+
+        when(usuarioService.registrarUsuario(any()))
+                .thenThrow(
+                        new EmailYaRegistradoException("ana@example.com"));
+
+        mockMvc.perform(post("/api/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "nombre": "Ana",
+                          "apellidos": "Garcia",
+                          "email": "ana@example.com",
+                          "confirmarEmail": "ana@example.com",
+                          "password": "Password123",
+                          "confirmarPassword": "Password123",
+                          "telefono": "600123456"
+                        }
+                        """))
+                .andExpect(status().isConflict());
+    }
 
 }

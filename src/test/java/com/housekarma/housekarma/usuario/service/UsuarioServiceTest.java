@@ -1,6 +1,7 @@
 
 package com.housekarma.housekarma.usuario.service;
 
+import com.housekarma.housekarma.usuario.dto.UsuarioRegistroRequest;
 import com.housekarma.housekarma.usuario.entity.Rol;
 import com.housekarma.housekarma.usuario.entity.Usuario;
 import com.housekarma.housekarma.usuario.repository.UsuarioRepository;
@@ -11,9 +12,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -33,53 +33,59 @@ class UsuarioServiceTest {
     private UsuarioService usuarioService;
 
     @Test
-    void debeRegistrarUsuarioCodificandoLaContrasena() {
-        Usuario usuario = new Usuario();
-        usuario.setNombre("Ana");
-        usuario.setApellidos("Garcia");
-        usuario.setEmail("ana.registro@example.com");
-        usuario.setPassword("password-plano");
-        usuario.setRol(Rol.INQUILINO);
-        usuario.setFechaRegistro(LocalDateTime.now());
+    void debeRegistrarUsuarioDesdeElDto() {
+        UsuarioRegistroRequest request = crearRequest();
 
-        when(usuarioRepository.existsByEmail(usuario.getEmail()))
+        when(usuarioRepository.existsByEmail(request.email()))
                 .thenReturn(false);
 
-        when(passwordEncoder.encode("password-plano"))
+        when(passwordEncoder.encode(request.password()))
                 .thenReturn("hash-codificado");
 
         when(usuarioRepository.save(any(Usuario.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Usuario resultado = usuarioService.registrarUsuario(usuario);
+        Usuario resultado = usuarioService.registrarUsuario(request);
 
+        assertEquals("Ana", resultado.getNombre());
+        assertEquals("Garcia", resultado.getApellidos());
+        assertEquals(request.email(), resultado.getEmail());
+        assertEquals(request.telefono(), resultado.getTelefono());
         assertEquals("hash-codificado", resultado.getPassword());
+        assertEquals(Rol.INQUILINO, resultado.getRol());
+        assertNotNull(resultado.getFechaRegistro());
 
-        verify(usuarioRepository).existsByEmail(usuario.getEmail());
-        verify(passwordEncoder).encode("password-plano");
-        verify(usuarioRepository).save(usuario);
+        verify(usuarioRepository).existsByEmail(request.email());
+        verify(passwordEncoder).encode(request.password());
+        verify(usuarioRepository).save(any(Usuario.class));
     }
 
     @Test
     void debeRechazarRegistroCuandoElEmailYaExiste() {
-        Usuario usuario = new Usuario();
-        usuario.setNombre("Ana");
-        usuario.setApellidos("Garcia");
-        usuario.setEmail("ana.registro@example.com");
-        usuario.setPassword("password-plano");
-        usuario.setRol(Rol.INQUILINO);
-        usuario.setFechaRegistro(LocalDateTime.now());
+        UsuarioRegistroRequest request = crearRequest();
 
-        when(usuarioRepository.existsByEmail(usuario.getEmail()))
+        when(usuarioRepository.existsByEmail(request.email()))
                 .thenReturn(true);
 
         assertThrows(
                 EmailYaRegistradoException.class,
-                () -> usuarioService.registrarUsuario(usuario));
+                () -> usuarioService.registrarUsuario(request)
+        );
 
-        verify(usuarioRepository).existsByEmail(usuario.getEmail());
+        verify(usuarioRepository).existsByEmail(request.email());
         verify(usuarioRepository, never()).save(any(Usuario.class));
         verify(passwordEncoder, never()).encode(any(String.class));
     }
 
+    private UsuarioRegistroRequest crearRequest() {
+        return new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "ana.registro@example.com",
+                "ana.registro@example.com",
+                "Password123",
+                "Password123",
+                "600123456"
+        );
+    }
 }

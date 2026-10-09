@@ -2,6 +2,7 @@
 package com.housekarma.housekarma.config;
 
 import com.housekarma.housekarma.usuario.service.EmailYaRegistradoException;
+import com.housekarma.housekarma.auth.exception.CredencialesInvalidasException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,46 +15,53 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(EmailYaRegistradoException.class)
-    public ProblemDetail handleEmailYaRegistrado(
-            EmailYaRegistradoException exception
-    ) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.CONFLICT,
-                "El email ya está registrado."
-        );
+        @ExceptionHandler(EmailYaRegistradoException.class)
+        public ProblemDetail handleEmailYaRegistrado(
+                        EmailYaRegistradoException exception) {
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.CONFLICT,
+                                "El email ya está registrado.");
 
-        problem.setTitle("Email duplicado");
+                problem.setTitle("Email duplicado");
 
-        return problem;
-    }
+                return problem;
+        }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleErroresDeValidacion(
-            MethodArgumentNotValidException exception
-    ) {
-        Map<String, String> errores = new LinkedHashMap<>();
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ProblemDetail handleErroresDeValidacion(
+                        MethodArgumentNotValidException exception) {
+                Map<String, String> errores = new LinkedHashMap<>();
 
-        exception.getBindingResult().getFieldErrors()
-                .forEach(error -> errores.putIfAbsent(
-                        error.getField(),
-                        error.getDefaultMessage()
-                ));
+                exception.getBindingResult().getFieldErrors()
+                                .forEach(error -> errores.putIfAbsent(
+                                                error.getField(),
+                                                error.getDefaultMessage()));
 
-        exception.getBindingResult().getGlobalErrors()
-                .forEach(error -> errores.putIfAbsent(
-                        "_global",
-                        error.getDefaultMessage()
-                ));
+                exception.getBindingResult().getGlobalErrors()
+                                .forEach(error -> errores.putIfAbsent(
+                                                "_global",
+                                                error.getDefaultMessage()));
 
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                "Uno o varios campos no son válidos."
-        );
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.BAD_REQUEST,
+                                "Uno o varios campos no son válidos.");
 
-        problem.setTitle("Error de validación");
-        problem.setProperty("errors", errores);
+                problem.setTitle("Error de validación");
+                problem.setProperty("errors", errores);
 
-        return problem;
-    }
+                return problem;
+        }
+
+        @ExceptionHandler(CredencialesInvalidasException.class)
+        public ProblemDetail handleCredencialesInvalidas(
+                        CredencialesInvalidasException exception) {
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.UNAUTHORIZED,
+                                "Email o contraseña incorrectos.");
+
+                problem.setTitle("Credenciales inválidas");
+
+                return problem;
+        }
 }

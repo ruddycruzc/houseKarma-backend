@@ -62,4 +62,11 @@ class UsuarioRepositoryTest {
         assertEquals("ana.busqueda@example.com", resultado.get().getEmail());
     }
 
+    @Test
+    void debeDevolverVacioCuandoElEmailNoExiste() {
+        var resultado = usuarioRepository.findByEmail("inexistente@example.com");
+
+        assertTrue(resultado.isEmpty());
+    }
+
 }

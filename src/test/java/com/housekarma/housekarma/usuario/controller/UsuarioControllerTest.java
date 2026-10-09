@@ -126,4 +126,25 @@ class UsuarioControllerTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void debeDevolverErroresDeValidacionPorCampo()
+            throws Exception {
+
+        mockMvc.perform(post("/api/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "nombre": "Ana",
+                          "apellidos": "Garcia",
+                          "email": "correo-invalido",
+                          "confirmarEmail": "correo-invalido",
+                          "password": "Password123",
+                          "confirmarPassword": "Password123",
+                          "telefono": "600123456"
+                        }
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.email").exists());
+    }
+
 }

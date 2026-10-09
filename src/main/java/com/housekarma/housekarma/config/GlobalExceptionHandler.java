@@ -4,8 +4,12 @@ package com.housekarma.housekarma.config;
 import com.housekarma.housekarma.usuario.service.EmailYaRegistradoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -20,6 +24,35 @@ public class GlobalExceptionHandler {
         );
 
         problem.setTitle("Email duplicado");
+
+        return problem;
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleErroresDeValidacion(
+            MethodArgumentNotValidException exception
+    ) {
+        Map<String, String> errores = new LinkedHashMap<>();
+
+        exception.getBindingResult().getFieldErrors()
+                .forEach(error -> errores.putIfAbsent(
+                        error.getField(),
+                        error.getDefaultMessage()
+                ));
+
+        exception.getBindingResult().getGlobalErrors()
+                .forEach(error -> errores.putIfAbsent(
+                        "_global",
+                        error.getDefaultMessage()
+                ));
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Uno o varios campos no son válidos."
+        );
+
+        problem.setTitle("Error de validación");
+        problem.setProperty("errors", errores);
 
         return problem;
     }

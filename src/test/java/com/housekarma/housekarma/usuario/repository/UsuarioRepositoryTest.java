@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
@@ -67,6 +68,22 @@ class UsuarioRepositoryTest {
         var resultado = usuarioRepository.findByEmail("inexistente@example.com");
 
         assertTrue(resultado.isEmpty());
+    }
+
+    @Test
+    void debeComprobarSiExisteUnEmailRegistrado() {
+        Usuario usuario = new Usuario();
+        usuario.setNombre("Ana");
+        usuario.setApellidos("Garcia");
+        usuario.setEmail("ana.existe@example.com");
+        usuario.setPassword("hash-de-prueba");
+        usuario.setRol(Rol.INQUILINO);
+        usuario.setFechaRegistro(LocalDateTime.now());
+
+        usuarioRepository.save(usuario);
+
+        assertTrue(usuarioRepository.existsByEmail("ana.existe@example.com"));
+        assertFalse(usuarioRepository.existsByEmail("noexiste@example.com"));
     }
 
 }

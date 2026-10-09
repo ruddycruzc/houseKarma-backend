@@ -10,8 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UsuarioRegistroRequestTest {
 
-    private final Validator validator =
-            Validation.buildDefaultValidatorFactory().getValidator();
+    private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @Test
     void debeRechazarEmailInvalidoYContrasenaCorta() {
@@ -19,19 +18,18 @@ class UsuarioRegistroRequestTest {
                 "Ana",
                 "Garcia",
                 "correo-invalido",
+                "correo-invalido",
                 "123",
-                null
-        );
+                "123",
+                null);
 
         var errores = validator.validate(request);
 
         assertFalse(errores.isEmpty());
         assertTrue(errores.stream().anyMatch(
-                error -> error.getPropertyPath().toString().equals("email")
-        ));
+                error -> error.getPropertyPath().toString().equals("email")));
         assertTrue(errores.stream().anyMatch(
-                error -> error.getPropertyPath().toString().equals("password")
-        ));
+                error -> error.getPropertyPath().toString().equals("password")));
     }
 
     @Test
@@ -40,10 +38,47 @@ class UsuarioRegistroRequestTest {
                 "Ana",
                 "Garcia",
                 "ana@example.com",
+                "ana@example.com",
                 "Password123",
-                "600123456"
-        );
+                "Password123",
+                "600123456");
 
         assertTrue(validator.validate(request).isEmpty());
     }
+
+    @Test
+    void debeRechazarContrasenasQueNoCoinciden() {
+        UsuarioRegistroRequest request = new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "ana@example.com",
+                "ana@example.com",
+                "Password123",
+                "Password456",
+                "600123456");
+
+        var errores = validator.validate(request);
+
+        assertTrue(errores.stream().anyMatch(
+                error -> error.getMessage()
+                        .equals("Las contraseñas no coinciden")));
+    }
+
+    @Test
+    void debeRechazarEmailsQueNoCoinciden() {
+        UsuarioRegistroRequest request = new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "ana@example.com",
+                "otro@example.com",
+                "Password123",
+                "Password123",
+                "600123456");
+
+        var errores = validator.validate(request);
+
+        assertTrue(errores.stream().anyMatch(
+                error -> error.getMessage().equals("Los emails no coinciden")));
+    }
+
 }

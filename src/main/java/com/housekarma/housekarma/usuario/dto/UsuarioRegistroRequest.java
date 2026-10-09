@@ -5,26 +5,39 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+@PasswordsCoinciden
+@EmailsCoinciden
 public record UsuarioRegistroRequest(
 
-        @NotBlank
-        @Size(max = 100)
+        @NotBlank(message = "El nombre es obligatorio")
+        @Size(max = 100, message = "El nombre no puede superar los 100 caracteres")
         String nombre,
 
-        @NotBlank
-        @Size(max = 150)
+        @NotBlank(message = "Los apellidos son obligatorios")
+        @Size(max = 150, message = "Los apellidos no pueden superar los 150 caracteres")
         String apellidos,
 
-        @NotBlank
-        @Email
-        @Size(max = 255)
+        @NotBlank(message = "El email es obligatorio")
+        @Email(message = "El email no tiene un formato válido")
+        @Size(max = 255, message = "El email no puede superar los 255 caracteres")
         String email,
 
-        @NotBlank
-        @Size(min = 8, max = 72)
+        @NotBlank(message = "Debes confirmar el email")
+        @Email(message = "El email de confirmación no tiene un formato válido")
+        @Size(max = 255)
+        String confirmarEmail,
+
+        @NotBlank(message = "La contraseña es obligatoria")
+        @Size(min = 8, max = 72,
+        message = "La contraseña debe tener entre 8 y 72 caracteres")
         String password,
 
-        @Size(max = 20)
+        @NotBlank(message = "Debes confirmar la contraseña")
+        @Size(min = 8, max = 72,
+                message = "La confirmación debe coincidir")
+        String confirmarPassword,
+
+        @Size(max = 20, message = "El teléfono no puede superar los 20 caracteres")
         String telefono
 
 ) {

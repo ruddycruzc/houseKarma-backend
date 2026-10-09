@@ -11,8 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JwtServiceTest {
 
-    private static final String SECRET_KEY =
-            "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
+    private static final String SECRET_KEY = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
 
     private JwtService jwtService;
     private Usuario usuario;
@@ -39,8 +38,7 @@ class JwtServiceTest {
 
         assertEquals(
                 "ana@example.com",
-                jwtService.extraerEmail(token)
-        );
+                jwtService.extraerEmail(token));
     }
 
     @Test
@@ -50,10 +48,20 @@ class JwtServiceTest {
         char ultimoCaracter = token.charAt(token.length() - 1);
         char caracterAlternativo = ultimoCaracter == 'a' ? 'b' : 'a';
 
-        String tokenManipulado =
-                token.substring(0, token.length() - 1)
-                        + caracterAlternativo;
+        String tokenManipulado = token.substring(0, token.length() - 1)
+                + caracterAlternativo;
 
         assertFalse(jwtService.esTokenValido(tokenManipulado));
+    }
+
+    @Test
+    void debeRechazarUnTokenCaducado() throws InterruptedException {
+        JwtService servicioConExpiracionCorta = new JwtService(SECRET_KEY, 1L);
+
+        String token = servicioConExpiracionCorta.generarToken(usuario);
+
+        Thread.sleep(20);
+
+        assertFalse(servicioConExpiracionCorta.esTokenValido(token));
     }
 }

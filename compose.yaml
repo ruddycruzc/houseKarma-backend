@@ -1,21 +1,30 @@
+
 services:
-  postgres:
-    image: postgres:18
-    container_name: housekarma-postgres
+  mysql:
+    image: mysql:8.0
+    container_name: housekarma-mysql
     restart: unless-stopped
     environment:
-      POSTGRES_DB: housekarma
-      POSTGRES_USER: ${DATABASE_USERNAME}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?Define MYSQL_DATABASE en .env}
+      MYSQL_USER: ${MYSQL_USER:?Define MYSQL_USER en .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Define MYSQL_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Define MYSQL_ROOT_PASSWORD en .env}
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - housekarma-pgdata:/var/lib/postgresql
+      - housekarma-mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d giacobello"]
+      test:
+        [
+          "CMD-SHELL",
+          'mysqladmin ping -h 127.0.0.1 -u root -p"$$MYSQL_ROOT_PASSWORD" --silent',
+        ]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
 volumes:
-  housekarma-pgdata:
+  housekarma-mysql-data:
+    external: true
+    name: decbe108557919a4bfc4080eca34459eaa1464e88b287881f31426a5cfe13b99

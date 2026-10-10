@@ -1,19 +1,13 @@
 package com.housekarma.housekarma.auth.filter;
 
 import com.housekarma.housekarma.auth.service.JwtService;
-import com.housekarma.housekarma.usuario.entity.Rol;
-import com.housekarma.housekarma.usuario.entity.Usuario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.mock;
+
 
 class JwtAuthenticationFilterTest {
 

@@ -1,6 +1,5 @@
 package com.housekarma.housekarma.usuario.controller;
 
-
 import com.housekarma.housekarma.auth.service.JwtService;
 import com.housekarma.housekarma.usuario.repository.UsuarioRepository;
 import com.housekarma.housekarma.usuario.dto.UsuarioRegistroRequest;
@@ -24,6 +23,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Optional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -91,4 +92,27 @@ class UsuarioSecurityIntegrationTest {
                 mockMvc.perform(get("/api/usuarios"))
                                 .andExpect(status().is4xxClientError());
         }
+
+        @Test
+        void debePermitirAccesoConTokenJwtValido() throws Exception {
+                Usuario usuario = new Usuario();
+                usuario.setNombre("Ana");
+                usuario.setApellidos("García");
+                usuario.setEmail("ana@example.com");
+                usuario.setRol(Rol.INQUILINO);
+
+                when(jwtService.esTokenValido("token-valido"))
+                                .thenReturn(true);
+
+                when(jwtService.extraerEmail("token-valido"))
+                                .thenReturn("ana@example.com");
+
+                when(usuarioRepository.findByEmail("ana@example.com"))
+                                .thenReturn(Optional.of(usuario));
+
+                mockMvc.perform(get("/api/usuarios")
+                                .header("Authorization", "Bearer token-valido"))
+                                .andExpect(status().isMethodNotAllowed());
+        }
+
 }

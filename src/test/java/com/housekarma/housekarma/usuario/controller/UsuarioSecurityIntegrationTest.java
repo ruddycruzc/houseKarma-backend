@@ -110,9 +110,12 @@ class UsuarioSecurityIntegrationTest {
                 when(usuarioRepository.findByEmail("ana@example.com"))
                                 .thenReturn(Optional.of(usuario));
 
-                mockMvc.perform(get("/api/usuarios")
+                mockMvc.perform(get("/api/test/protected")
                                 .header("Authorization", "Bearer token-valido"))
-                                .andExpect(status().isMethodNotAllowed());
+                                .andExpect(status().isOk())
+                                .andExpect(
+                                                org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                                                                .content().string("Acceso autorizado"));
         }
 
 }

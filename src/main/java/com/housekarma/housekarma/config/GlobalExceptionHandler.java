@@ -8,6 +8,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.housekarma.housekarma.usuario.service.UsuarioNoEncontradoException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -61,6 +62,19 @@ public class GlobalExceptionHandler {
                                 "Email o contraseña incorrectos.");
 
                 problem.setTitle("Credenciales inválidas");
+
+                return problem;
+        }
+
+        @ExceptionHandler(UsuarioNoEncontradoException.class)
+        public ProblemDetail handleUsuarioNoEncontrado(
+                        UsuarioNoEncontradoException exception) {
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.NOT_FOUND,
+                                exception.getMessage());
+
+                problem.setTitle("Usuario no encontrado");
 
                 return problem;
         }

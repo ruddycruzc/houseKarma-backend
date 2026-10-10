@@ -18,8 +18,7 @@ public class UsuarioService {
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
-            PasswordEncoder passwordEncoder
-    ) {
+            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -39,5 +38,10 @@ public class UsuarioService {
         usuario.setFechaRegistro(LocalDateTime.now());
 
         return usuarioRepository.save(usuario);
+    }
+
+    public Usuario buscarPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new UsuarioNoEncontradoException(email));
     }
 }

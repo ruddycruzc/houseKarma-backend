@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -26,8 +28,7 @@ public class UsuarioController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UsuarioResponse registrarUsuario(
-            @Valid @RequestBody UsuarioRegistroRequest request
-    ) {
+            @Valid @RequestBody UsuarioRegistroRequest request) {
         Usuario usuario = usuarioService.registrarUsuario(request);
 
         return new UsuarioResponse(
@@ -37,7 +38,20 @@ public class UsuarioController {
                 usuario.getEmail(),
                 usuario.getTelefono(),
                 usuario.getAvatar(),
-                usuario.getRol().name()
-        );
+                usuario.getRol().name());
+    }
+
+    @GetMapping("/buscar")
+    public UsuarioResponse buscarPorEmail(@RequestParam String email) {
+        Usuario usuario = usuarioService.buscarPorEmail(email);
+
+        return new UsuarioResponse(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getApellidos(),
+                usuario.getEmail(),
+                usuario.getTelefono(),
+                usuario.getAvatar(),
+                usuario.getRol().name());
     }
 }

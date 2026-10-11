@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.housekarma.housekarma.usuario.service.UsuarioNoEncontradoException;
+import com.housekarma.housekarma.vivienda.service.ViviendaDuplicadaException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -75,6 +76,32 @@ public class GlobalExceptionHandler {
                                 exception.getMessage());
 
                 problem.setTitle("Usuario no encontrado");
+
+                return problem;
+        }
+
+        @ExceptionHandler(ViviendaDuplicadaException.class)
+        public ProblemDetail handleViviendaDuplicada(
+                        ViviendaDuplicadaException exception) {
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.CONFLICT,
+                                exception.getMessage());
+
+                problem.setTitle("Vivienda duplicada");
+
+                return problem;
+        }
+
+        @ExceptionHandler(IllegalArgumentException.class)
+        public ProblemDetail handleArgumentoInvalido(
+                        IllegalArgumentException exception) {
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.BAD_REQUEST,
+                                exception.getMessage());
+
+                problem.setTitle("Datos inválidos");
 
                 return problem;
         }

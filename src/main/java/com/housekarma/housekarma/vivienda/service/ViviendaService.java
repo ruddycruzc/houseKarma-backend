@@ -40,9 +40,8 @@ public class ViviendaService {
 
         String direccionNormalizada = normalizarDireccion(direccionCompleta);
 
-        if (viviendaRepository.existsByDireccionNormalizada(
-                direccionNormalizada)) {
-            throw new IllegalArgumentException(
+        if (viviendaRepository.existsByDireccionNormalizada(direccionNormalizada)) {
+            throw new ViviendaDuplicadaException(
                     "La vivienda con esa dirección ya existe");
         }
 

@@ -46,7 +46,7 @@ class ViviendaServiceTest {
                 "calle corrida, 10, gijon, 33206, asturias")).thenReturn(true);
 
         assertThatThrownBy(() -> viviendaService.registrar(vivienda))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ViviendaDuplicadaException.class)
                 .hasMessageContaining("ya existe");
 
         verify(viviendaRepository, never()).save(any(Vivienda.class));

@@ -18,6 +18,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -181,6 +182,35 @@ class UsuarioControllerTest {
                                 .andExpect(jsonPath("$.rol").value("CASERO"));
 
                 verify(usuarioService).registrarUsuario(any());
+        }
+
+        @Test
+        void debeDevolverPerfilSinTelefonoNiContrasena() throws Exception {
+                Usuario usuario = new Usuario();
+                usuario.setNombre("Ana");
+                usuario.setApellidos("Garcia");
+                usuario.setEmail("ana@example.com");
+                usuario.setAvatar("https://example.com/avatar.png");
+                usuario.setTelefono("600123456");
+                usuario.setPassword("hash-codificado");
+                usuario.setRol(Rol.INQUILINO);
+
+                when(usuarioService.buscarPorEmail("ana@example.com"))
+                                .thenReturn(usuario);
+
+                mockMvc.perform(get("/api/usuarios/buscar")
+                                .param("email", "ana@example.com"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.nombre").value("Ana"))
+                                .andExpect(jsonPath("$.apellidos").value("Garcia"))
+                                .andExpect(jsonPath("$.avatar")
+                                                .value("https://example.com/avatar.png"))
+                                .andExpect(jsonPath("$.rol").value("INQUILINO"))
+                                .andExpect(jsonPath("$.email").value("ana@example.com"))
+                                .andExpect(jsonPath("$.telefono").doesNotExist())
+                                .andExpect(jsonPath("$.password").doesNotExist());
+
+                verify(usuarioService).buscarPorEmail("ana@example.com");
         }
 
 }

@@ -1,6 +1,7 @@
 
 package com.housekarma.housekarma.usuario.controller;
 
+import com.housekarma.housekarma.usuario.dto.UsuarioPerfilResponse;
 import com.housekarma.housekarma.usuario.dto.UsuarioRegistroRequest;
 import com.housekarma.housekarma.usuario.dto.UsuarioResponse;
 import com.housekarma.housekarma.usuario.entity.Usuario;
@@ -42,16 +43,16 @@ public class UsuarioController {
     }
 
     @GetMapping("/buscar")
-    public UsuarioResponse buscarPorEmail(@RequestParam String email) {
+    public UsuarioPerfilResponse buscarPorEmail(
+            @RequestParam String email) {
+
         Usuario usuario = usuarioService.buscarPorEmail(email);
 
-        return new UsuarioResponse(
-                usuario.getId(),
+        return new UsuarioPerfilResponse(
                 usuario.getNombre(),
                 usuario.getApellidos(),
-                usuario.getEmail(),
-                usuario.getTelefono(),
                 usuario.getAvatar(),
-                usuario.getRol().name());
+                usuario.getRol().name(),
+                usuario.getEmail());
     }
 }

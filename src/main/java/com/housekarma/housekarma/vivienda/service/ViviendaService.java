@@ -4,6 +4,7 @@ import com.housekarma.housekarma.vivienda.entity.Vivienda;
 import com.housekarma.housekarma.vivienda.repository.ViviendaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
@@ -87,4 +88,16 @@ public class ViviendaService {
                     "La provincia es obligatoria");
         }
     }
+
+    @Transactional(readOnly = true)
+    public List<Vivienda> listarTodas() {
+        return viviendaRepository.findAll();
+    }
+
+@Transactional(readOnly = true)
+public Vivienda buscarPorId(Long id) {
+    return viviendaRepository.findById(id)
+            .orElseThrow(() -> new ViviendaNoEncontradaException(
+                    "No se ha encontrado la vivienda con ID: " + id));
+}
 }

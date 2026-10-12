@@ -5,11 +5,13 @@ import com.housekarma.housekarma.usuario.service.EmailYaRegistradoException;
 import com.housekarma.housekarma.auth.exception.CredencialesInvalidasException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.housekarma.housekarma.usuario.service.UsuarioNoEncontradoException;
 import com.housekarma.housekarma.vivienda.service.ViviendaDuplicadaException;
+import com.housekarma.housekarma.vivienda.service.ViviendaNoEncontradaException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -102,6 +104,18 @@ public class GlobalExceptionHandler {
                                 exception.getMessage());
 
                 problem.setTitle("Datos inválidos");
+
+                return problem;
+        }
+
+        @ExceptionHandler(ViviendaNoEncontradaException.class)
+        public ProblemDetail manejarViviendaNoEncontrada(
+                        ViviendaNoEncontradaException exception) {
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.NOT_FOUND,
+                                exception.getMessage());
+
+                problem.setTitle("Vivienda no encontrada");
 
                 return problem;
         }

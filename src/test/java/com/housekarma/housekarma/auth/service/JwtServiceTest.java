@@ -8,6 +8,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import java.util.Base64;
 
 class JwtServiceTest {
 
@@ -63,5 +67,21 @@ class JwtServiceTest {
         Thread.sleep(20);
 
         assertFalse(servicioConExpiracionCorta.esTokenValido(token));
+    }
+
+    @Test
+    void debeIncluirElRolEnElToken() {
+        usuario.setRol(Rol.CASERO);
+
+        String token = jwtService.generarToken(usuario);
+
+        Claims claims = Jwts.parser()
+                .verifyWith(Keys.hmacShaKeyFor(
+                        Base64.getDecoder().decode(SECRET_KEY)))
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        assertEquals("CASERO", claims.get("rol", String.class));
     }
 }

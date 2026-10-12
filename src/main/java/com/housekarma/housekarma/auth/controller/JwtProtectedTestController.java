@@ -1,5 +1,5 @@
 
-package com.housekarma.housekarma.auth;
+package com.housekarma.housekarma.auth.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;

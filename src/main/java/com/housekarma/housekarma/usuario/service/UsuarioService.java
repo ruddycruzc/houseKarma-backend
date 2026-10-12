@@ -34,7 +34,7 @@ public class UsuarioService {
         usuario.setEmail(request.email());
         usuario.setTelefono(request.telefono());
         usuario.setPassword(passwordEncoder.encode(request.password()));
-        usuario.setRol(Rol.INQUILINO);
+        usuario.setRol(Rol.valueOf(request.rol()));
         usuario.setFechaRegistro(LocalDateTime.now());
 
         return usuarioRepository.save(usuario);

@@ -1,4 +1,3 @@
-
 package com.housekarma.housekarma.usuario.dto;
 
 import jakarta.validation.Validation;
@@ -10,7 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UsuarioRegistroRequestTest {
 
-    private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+    private final Validator validator =
+            Validation.buildDefaultValidatorFactory().getValidator();
 
     @Test
     void debeRechazarEmailInvalidoYContrasenaCorta() {
@@ -21,7 +21,9 @@ class UsuarioRegistroRequestTest {
                 "correo-invalido",
                 "123",
                 "123",
-                null);
+                "600123456",
+                "INQUILINO"
+        );
 
         var errores = validator.validate(request);
 
@@ -41,7 +43,25 @@ class UsuarioRegistroRequestTest {
                 "ana@example.com",
                 "Password123",
                 "Password123",
-                "600123456");
+                "600123456",
+                "INQUILINO"
+        );
+
+        assertTrue(validator.validate(request).isEmpty());
+    }
+
+    @Test
+    void debeAceptarRolCasero() {
+        UsuarioRegistroRequest request = new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "ana@example.com",
+                "ana@example.com",
+                "Password123",
+                "Password123",
+                "600123456",
+                "CASERO"
+        );
 
         assertTrue(validator.validate(request).isEmpty());
     }
@@ -55,7 +75,9 @@ class UsuarioRegistroRequestTest {
                 "ana@example.com",
                 "Password123",
                 "Password456",
-                "600123456");
+                "600123456",
+                "INQUILINO"
+        );
 
         var errores = validator.validate(request);
 
@@ -73,12 +95,71 @@ class UsuarioRegistroRequestTest {
                 "otro@example.com",
                 "Password123",
                 "Password123",
-                "600123456");
+                "600123456",
+                "INQUILINO"
+        );
 
         var errores = validator.validate(request);
 
         assertTrue(errores.stream().anyMatch(
-                error -> error.getMessage().equals("Los emails no coinciden")));
+                error -> error.getMessage()
+                        .equals("Los emails no coinciden")));
     }
 
+    @Test
+    void debeRechazarRolAdmin() {
+        UsuarioRegistroRequest request = new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "ana@example.com",
+                "ana@example.com",
+                "Password123",
+                "Password123",
+                "600123456",
+                "ADMIN"
+        );
+
+        var errores = validator.validate(request);
+
+        assertTrue(errores.stream().anyMatch(
+                error -> error.getPropertyPath().toString().equals("rol")));
+    }
+
+    @Test
+    void debeRechazarRolVacio() {
+        UsuarioRegistroRequest request = new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "ana@example.com",
+                "ana@example.com",
+                "Password123",
+                "Password123",
+                "600123456",
+                null
+        );
+
+        var errores = validator.validate(request);
+
+        assertTrue(errores.stream().anyMatch(
+                error -> error.getPropertyPath().toString().equals("rol")));
+    }
+
+    @Test
+    void debeRechazarRolDesconocido() {
+        UsuarioRegistroRequest request = new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "ana@example.com",
+                "ana@example.com",
+                "Password123",
+                "Password123",
+                "600123456",
+                "desconocido"
+        );
+
+        var errores = validator.validate(request);
+
+        assertTrue(errores.stream().anyMatch(
+                error -> error.getPropertyPath().toString().equals("rol")));
+    }
 }

@@ -88,7 +88,8 @@ class UsuarioServiceTest {
                                 "ana.registro@example.com",
                                 "Password123",
                                 "Password123",
-                                "600123456");
+                                "600123456",
+                                "INQUILINO");
         }
 
         @Test

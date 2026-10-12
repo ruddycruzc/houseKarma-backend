@@ -4,6 +4,7 @@ package com.housekarma.housekarma.usuario.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 @PasswordsCoinciden
 @EmailsCoinciden
@@ -37,8 +38,14 @@ public record UsuarioRegistroRequest(
                 message = "La confirmación debe coincidir")
         String confirmarPassword,
 
-        @Size(max = 20, message = "El teléfono no puede superar los 20 caracteres")
-        String telefono
+       @Size(max = 20, message = "El teléfono no puede superar los 20 caracteres")
+        String telefono,
 
-) {
-}
+        @NotBlank(message = "Debes seleccionar un tipo de usuario")
+        @Pattern(
+        regexp = "INQUILINO|CASERO",
+        message = "El rol debe ser INQUILINO o CASERO"
+        )
+        String rol
+        ) {
+        }

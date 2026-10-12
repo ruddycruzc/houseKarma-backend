@@ -23,6 +23,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.test.util.ReflectionTestUtils;
+import com.housekarma.housekarma.vivienda.service.ViviendaNoEncontradaException;
+import java.util.List;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @WebMvcTest(ViviendaController.class)
 class ViviendaControllerTest {
@@ -127,5 +131,52 @@ class ViviendaControllerTest {
                 "calle corrida, 10, gijon, 33206, asturias");
         vivienda.setFechaRegistro(LocalDateTime.now());
         return vivienda;
+    }
+
+    @Test
+    void debeListarViviendasYDevolver200() throws Exception {
+        Vivienda vivienda = crearVivienda();
+
+        when(viviendaService.listarTodas())
+                .thenReturn(List.of(vivienda));
+
+        mockMvc.perform(get("/api/viviendas")
+                .with(user("test")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].direccion")
+                        .value("Calle Corrida"))
+                .andExpect(jsonPath("$[0].localidad").value("Gijón"));
+
+        verify(viviendaService).listarTodas();
+    }
+
+    @Test
+    void debeBuscarViviendaPorIdYDevolver200() throws Exception {
+        Vivienda vivienda = crearVivienda();
+
+        when(viviendaService.buscarPorId(1L))
+                .thenReturn(vivienda);
+
+        mockMvc.perform(get("/api/viviendas/1")
+                .with(user("test")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.direccion")
+                        .value("Calle Corrida"))
+                .andExpect(jsonPath("$.localidad").value("Gijón"));
+
+        verify(viviendaService).buscarPorId(1L);
+    }
+
+    @Test
+    void debeDevolver404CuandoLaViviendaNoExiste() throws Exception {
+        when(viviendaService.buscarPorId(99L))
+                .thenThrow(new ViviendaNoEncontradaException(
+                        "No se ha encontrado la vivienda con ID: 99"));
+
+        mockMvc.perform(get("/api/viviendas/99")
+                .with(user("test")))
+                .andExpect(status().isNotFound());
     }
 }

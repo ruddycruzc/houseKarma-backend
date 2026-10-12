@@ -6,7 +6,12 @@ import com.housekarma.housekarma.vivienda.entity.Vivienda;
 import com.housekarma.housekarma.vivienda.service.ViviendaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/viviendas")
@@ -32,5 +37,23 @@ public class ViviendaController {
         Vivienda registrada = viviendaService.registrar(vivienda);
 
         return ViviendaResponse.fromEntity(registrada);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ViviendaResponse>> listarTodas() {
+        List<ViviendaResponse> viviendas = viviendaService.listarTodas()
+                .stream()
+                .map(ViviendaResponse::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(viviendas);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ViviendaResponse> buscarPorId(
+            @PathVariable Long id) {
+        Vivienda vivienda = viviendaService.buscarPorId(id);
+
+        return ResponseEntity.ok(ViviendaResponse.fromEntity(vivienda));
     }
 }

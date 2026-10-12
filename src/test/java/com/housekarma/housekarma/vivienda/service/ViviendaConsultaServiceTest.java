@@ -29,12 +29,16 @@ class ViviendaConsultaServiceTest {
         vivienda.setDireccion("Calle Corrida");
         vivienda.setNumero("10");
 
-        when(viviendaRepository.findAll()).thenReturn(List.of(vivienda));
+        when(viviendaRepository.findAll())
+                .thenReturn(List.of(vivienda));
 
-        List<Vivienda> resultado = viviendaRepository.findAll();
+        List<Vivienda> resultado = viviendaService.listarTodas();
 
         assertEquals(1, resultado.size());
-        assertEquals("Calle Corrida", resultado.get(0).getDireccion());
+        assertEquals("Calle Corrida",
+                resultado.get(0).getDireccion());
+
+        verify(viviendaRepository).findAll();
     }
 
     @Test
@@ -45,19 +49,24 @@ class ViviendaConsultaServiceTest {
         when(viviendaRepository.findById(1L))
                 .thenReturn(Optional.of(vivienda));
 
-        Optional<Vivienda> resultado = viviendaRepository.findById(1L);
+        Vivienda resultado = viviendaService.buscarPorId(1L);
 
-        assertTrue(resultado.isPresent());
-        assertEquals("Calle Corrida", resultado.get().getDireccion());
+        assertNotNull(resultado);
+        assertEquals("Calle Corrida", resultado.getDireccion());
+
+        verify(viviendaRepository).findById(1L);
     }
 
     @Test
-    void debeDevolverVacioCuandoLaViviendaNoExiste() {
+    void debeLanzarExcepcionCuandoLaViviendaNoExiste() {
         when(viviendaRepository.findById(99L))
                 .thenReturn(Optional.empty());
 
-        Optional<Vivienda> resultado = viviendaRepository.findById(99L);
+        assertThrows(
+                ViviendaNoEncontradaException.class,
+                () -> viviendaService.buscarPorId(99L)
+        );
 
-        assertTrue(resultado.isEmpty());
+        verify(viviendaRepository).findById(99L);
     }
 }

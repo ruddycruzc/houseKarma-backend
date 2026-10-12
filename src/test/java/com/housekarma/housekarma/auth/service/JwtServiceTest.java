@@ -45,11 +45,11 @@ class JwtServiceTest {
     void debeRechazarUnTokenManipulado() {
         String token = jwtService.generarToken(usuario);
 
-        char ultimoCaracter = token.charAt(token.length() - 1);
-        char caracterAlternativo = ultimoCaracter == 'a' ? 'b' : 'a';
+        String[] partes = token.split("\\.");
+        partes[1] = partes[1].substring(0, partes[1].length() - 1)
+                + (partes[1].endsWith("a") ? "b" : "a");
 
-        String tokenManipulado = token.substring(0, token.length() - 1)
-                + caracterAlternativo;
+        String tokenManipulado = String.join(".", partes);
 
         assertFalse(jwtService.esTokenValido(tokenManipulado));
     }

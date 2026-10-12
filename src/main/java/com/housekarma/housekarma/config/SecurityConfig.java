@@ -57,10 +57,20 @@ public class SecurityConfig {
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(HttpMethod.POST,
+                                                // Registro y login públicos
+                                                .requestMatchers(
+                                                                HttpMethod.POST,
                                                                 "/api/usuarios",
                                                                 "/api/auth/login")
                                                 .permitAll()
+
+                                                // Registrar viviendas: caseros y administradores
+                                                .requestMatchers(
+                                                                HttpMethod.POST,
+                                                                "/api/viviendas")
+                                                .hasAnyRole("CASERO", "ADMIN")
+
+                                                // Cualquier otra ruta requiere autenticación
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(
                                                 jwtAuthenticationFilter,

@@ -1,4 +1,3 @@
-
 package com.housekarma.housekarma.usuario.service;
 
 import com.housekarma.housekarma.usuario.dto.UsuarioRegistroRequest;
@@ -12,117 +11,166 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertSame;
-
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
 
-        @Mock
-        private UsuarioRepository usuarioRepository;
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
-        @Mock
-        private PasswordEncoder passwordEncoder;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
-        @InjectMocks
-        private UsuarioService usuarioService;
+    @InjectMocks
+    private UsuarioService usuarioService;
 
-        @Test
-        void debeRegistrarUsuarioDesdeElDto() {
-                UsuarioRegistroRequest request = crearRequest();
+    @Test
+    void debeRegistrarUsuarioConRolInquilino() {
+        UsuarioRegistroRequest request = crearRequest("INQUILINO");
+        Usuario resultado = registrarUsuarioCorrectamente(request);
 
-                when(usuarioRepository.existsByEmail(request.email()))
-                                .thenReturn(false);
+        assertEquals("Ana", resultado.getNombre());
+        assertEquals("Garcia", resultado.getApellidos());
+        assertEquals(request.email(), resultado.getEmail());
+        assertEquals(request.telefono(), resultado.getTelefono());
+        assertEquals("hash-codificado", resultado.getPassword());
+        assertEquals(Rol.INQUILINO, resultado.getRol());
+        assertNotNull(resultado.getFechaRegistro());
 
-                when(passwordEncoder.encode(request.password()))
-                                .thenReturn("hash-codificado");
+        verificarRegistroCorrecto(request);
+    }
 
-                when(usuarioRepository.save(any(Usuario.class)))
-                                .thenAnswer(invocation -> invocation.getArgument(0));
+    @Test
+    void debeRegistrarUsuarioConRolCasero() {
+        UsuarioRegistroRequest request = crearRequest("CASERO");
+        Usuario resultado = registrarUsuarioCorrectamente(request);
 
-                Usuario resultado = usuarioService.registrarUsuario(request);
+        assertEquals(Rol.CASERO, resultado.getRol());
 
-                assertEquals("Ana", resultado.getNombre());
-                assertEquals("Garcia", resultado.getApellidos());
-                assertEquals(request.email(), resultado.getEmail());
-                assertEquals(request.telefono(), resultado.getTelefono());
-                assertEquals("hash-codificado", resultado.getPassword());
-                assertEquals(Rol.INQUILINO, resultado.getRol());
-                assertNotNull(resultado.getFechaRegistro());
+        verificarRegistroCorrecto(request);
+    }
 
-                verify(usuarioRepository).existsByEmail(request.email());
-                verify(passwordEncoder).encode(request.password());
-                verify(usuarioRepository).save(any(Usuario.class));
-        }
+    @Test
+    void debeRechazarRegistroConRolAdmin() {
+        UsuarioRegistroRequest request = crearRequest("ADMIN");
 
-        @Test
-        void debeRechazarRegistroCuandoElEmailYaExiste() {
-                UsuarioRegistroRequest request = crearRequest();
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> usuarioService.registrarUsuario(request));
 
-                when(usuarioRepository.existsByEmail(request.email()))
-                                .thenReturn(true);
+        verificarRolRechazado(request);
+    }
 
-                assertThrows(
-                                EmailYaRegistradoException.class,
-                                () -> usuarioService.registrarUsuario(request));
+    @Test
+    void debeRechazarRegistroConRolDesconocido() {
+        UsuarioRegistroRequest request = crearRequest("DESCONOCIDO");
 
-                verify(usuarioRepository).existsByEmail(request.email());
-                verify(usuarioRepository, never()).save(any(Usuario.class));
-                verify(passwordEncoder, never()).encode(any(String.class));
-        }
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> usuarioService.registrarUsuario(request));
 
-        private UsuarioRegistroRequest crearRequest() {
-                return new UsuarioRegistroRequest(
-                                "Ana",
-                                "Garcia",
-                                "ana.registro@example.com",
-                                "ana.registro@example.com",
-                                "Password123",
-                                "Password123",
-                                "600123456",
-                                "INQUILINO");
-        }
+        verificarRolRechazado(request);
+    }
 
-        @Test
-        void debeEncontrarUsuarioPorEmail() {
-                String email = "ana@example.com";
+    @Test
+    void debeRechazarRegistroCuandoElEmailYaExiste() {
+        UsuarioRegistroRequest request = crearRequest("INQUILINO");
 
-                Usuario usuario = new Usuario();
-                usuario.setNombre("Ana");
-                usuario.setApellidos("García");
-                usuario.setEmail(email);
-                usuario.setRol(Rol.INQUILINO);
+        when(usuarioRepository.existsByEmail(request.email()))
+                .thenReturn(true);
 
-                when(usuarioRepository.findByEmail(email))
-                                .thenReturn(Optional.of(usuario));
+        assertThrows(
+                EmailYaRegistradoException.class,
+                () -> usuarioService.registrarUsuario(request));
 
-                Usuario resultado = usuarioService.buscarPorEmail(email);
+        verify(usuarioRepository).existsByEmail(request.email());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(passwordEncoder, never()).encode(any(String.class));
+    }
 
-                assertSame(usuario, resultado);
-                verify(usuarioRepository).findByEmail(email);
-        }
+    @Test
+    void debeEncontrarUsuarioPorEmail() {
+        String email = "ana@example.com";
 
-        @Test
-        void debeLanzarExcepcionCuandoNoEncuentraUsuarioPorEmail() {
-                String email = "inexistente@example.com";
+        Usuario usuario = new Usuario();
+        usuario.setNombre("Ana");
+        usuario.setApellidos("García");
+        usuario.setEmail(email);
+        usuario.setRol(Rol.INQUILINO);
 
-                when(usuarioRepository.findByEmail(email))
-                                .thenReturn(Optional.empty());
+        when(usuarioRepository.findByEmail(email))
+                .thenReturn(Optional.of(usuario));
 
-                assertThrows(
-                                UsuarioNoEncontradoException.class,
-                                () -> usuarioService.buscarPorEmail(email));
+        Usuario resultado = usuarioService.buscarPorEmail(email);
 
-                verify(usuarioRepository).findByEmail(email);
-        }
+        assertSame(usuario, resultado);
+        verify(usuarioRepository).findByEmail(email);
+    }
 
+    @Test
+    void debeLanzarExcepcionCuandoNoEncuentraUsuarioPorEmail() {
+        String email = "inexistente@example.com";
+
+        when(usuarioRepository.findByEmail(email))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                UsuarioNoEncontradoException.class,
+                () -> usuarioService.buscarPorEmail(email));
+
+        verify(usuarioRepository).findByEmail(email);
+    }
+
+    private UsuarioRegistroRequest crearRequest(String rol) {
+        return new UsuarioRegistroRequest(
+                "Ana",
+                "Garcia",
+                "ana.registro@example.com",
+                "ana.registro@example.com",
+                "Password123",
+                "Password123",
+                "600123456",
+                rol);
+    }
+
+    private Usuario registrarUsuarioCorrectamente(
+            UsuarioRegistroRequest request) {
+
+        when(usuarioRepository.existsByEmail(request.email()))
+                .thenReturn(false);
+
+        when(passwordEncoder.encode(request.password()))
+                .thenReturn("hash-codificado");
+
+        when(usuarioRepository.save(any(Usuario.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        return usuarioService.registrarUsuario(request);
+    }
+
+    private void verificarRegistroCorrecto(
+            UsuarioRegistroRequest request) {
+
+        verify(usuarioRepository).existsByEmail(request.email());
+        verify(passwordEncoder).encode(request.password());
+        verify(usuarioRepository).save(any(Usuario.class));
+    }
+
+    private void verificarRolRechazado(
+            UsuarioRegistroRequest request) {
+
+        verify(usuarioRepository, never()).existsByEmail(request.email());
+        verify(passwordEncoder, never()).encode(any(String.class));
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
 }

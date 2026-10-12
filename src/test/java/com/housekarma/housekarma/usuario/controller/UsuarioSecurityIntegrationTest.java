@@ -26,6 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Optional;
 
+import com.housekarma.housekarma.vivienda.service.ViviendaService;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 class UsuarioSecurityIntegrationTest {
@@ -41,6 +43,9 @@ class UsuarioSecurityIntegrationTest {
 
         @MockitoBean
         private UsuarioRepository usuarioRepository;
+
+        @MockitoBean
+        private ViviendaService viviendaService;
 
         @Test
         void debePermitirRegistroSinAutenticacion() throws Exception {
@@ -63,7 +68,8 @@ class UsuarioSecurityIntegrationTest {
                                                   "confirmarEmail": "ana@example.com",
                                                   "password": "ClaveSegura123",
                                                   "confirmarPassword": "ClaveSegura123",
-                                                  "telefono": "600123456"
+                                                  "telefono": "600123456",
+                                                  "rol": "INQUILINO"
                                                 }
                                                 """))
                                 .andExpect(status().isCreated())
@@ -116,6 +122,74 @@ class UsuarioSecurityIntegrationTest {
                                 .andExpect(
                                                 org.springframework.test.web.servlet.result.MockMvcResultMatchers
                                                                 .content().string("Acceso autorizado"));
+        }
+
+        @Test
+        void debeDenegarRegistroDeViviendaAInquilino() throws Exception {
+                Usuario usuario = new Usuario();
+                usuario.setEmail("ana@example.com");
+                usuario.setRol(Rol.INQUILINO);
+
+                when(jwtService.esTokenValido("token-inquilino"))
+                                .thenReturn(true);
+                when(jwtService.extraerEmail("token-inquilino"))
+                                .thenReturn("ana@example.com");
+                when(usuarioRepository.findByEmail("ana@example.com"))
+                                .thenReturn(Optional.of(usuario));
+
+                mockMvc.perform(post("/api/viviendas")
+                                .header("Authorization", "Bearer token-inquilino")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "direccion": "Calle Mayor",
+                                                  "numero": "10",
+                                                  "complemento": "",
+                                                  "localidad": "Gijón",
+                                                  "codigoPostal": "33201",
+                                                  "provincia": "Asturias"
+                                                }
+                                                """))
+                                .andExpect(status().isForbidden());
+
+                verify(viviendaService, never())
+                                .registrar(any(com.housekarma.housekarma.vivienda.entity.Vivienda.class));
+        }
+
+        @Test
+        void debePermitirRegistroDeViviendaACasero() throws Exception {
+                Usuario usuario = new Usuario();
+                usuario.setEmail("casero@example.com");
+                usuario.setRol(Rol.CASERO);
+
+                when(jwtService.esTokenValido("token-casero"))
+                                .thenReturn(true);
+                when(jwtService.extraerEmail("token-casero"))
+                                .thenReturn("casero@example.com");
+                when(usuarioRepository.findByEmail("casero@example.com"))
+                                .thenReturn(Optional.of(usuario));
+
+                when(viviendaService.registrar(any(
+                                com.housekarma.housekarma.vivienda.entity.Vivienda.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
+
+                mockMvc.perform(post("/api/viviendas")
+                                .header("Authorization", "Bearer token-casero")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "direccion": "Calle Mayor",
+                                                  "numero": "10",
+                                                  "complemento": "",
+                                                  "localidad": "Gijón",
+                                                  "codigoPostal": "33201",
+                                                  "provincia": "Asturias"
+                                                }
+                                                """))
+                                .andExpect(status().isCreated());
+
+                verify(viviendaService).registrar(any(
+                                com.housekarma.housekarma.vivienda.entity.Vivienda.class));
         }
 
 }

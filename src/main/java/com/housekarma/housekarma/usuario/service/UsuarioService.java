@@ -24,6 +24,19 @@ public class UsuarioService {
     }
 
     public Usuario registrarUsuario(UsuarioRegistroRequest request) {
+        Rol rol;
+
+        try {
+            rol = Rol.valueOf(request.rol());
+        } catch (IllegalArgumentException | NullPointerException exception) {
+            throw new IllegalArgumentException("El rol indicado no es válido");
+        }
+
+        if (rol != Rol.INQUILINO && rol != Rol.CASERO) {
+            throw new IllegalArgumentException(
+                    "El registro público solo permite los roles INQUILINO y CASERO");
+        }
+
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new EmailYaRegistradoException(request.email());
         }
@@ -34,7 +47,7 @@ public class UsuarioService {
         usuario.setEmail(request.email());
         usuario.setTelefono(request.telefono());
         usuario.setPassword(passwordEncoder.encode(request.password()));
-        usuario.setRol(Rol.valueOf(request.rol()));
+        usuario.setRol(rol);
         usuario.setFechaRegistro(LocalDateTime.now());
 
         return usuarioRepository.save(usuario);

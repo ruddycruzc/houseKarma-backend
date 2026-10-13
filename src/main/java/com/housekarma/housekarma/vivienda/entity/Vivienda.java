@@ -2,28 +2,26 @@
 package com.housekarma.housekarma.vivienda.entity;
 
 import jakarta.persistence.*;
+import com.housekarma.housekarma.usuario.entity.Usuario;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-    name = "vivienda",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_vivienda_direccion_normalizada",
-            columnNames = "direccion_normalizada"
-        )
-    },
-    indexes = {
+@Table(name = "vivienda", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_vivienda_direccion_normalizada", columnNames = "direccion_normalizada")
+}, indexes = {
         @Index(name = "idx_vivienda_localidad", columnList = "localidad"),
         @Index(name = "idx_vivienda_codigo_postal", columnList = "codigo_postal")
-    }
-)
+})
 public class Vivienda {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "casero_id", nullable = false)
+    private Usuario casero;
 
     @Column(nullable = false)
     private String direccion;
@@ -117,5 +115,13 @@ public class Vivienda {
 
     public void setFechaRegistro(LocalDateTime fechaRegistro) {
         this.fechaRegistro = fechaRegistro;
+    }
+
+    public Usuario getCasero() {
+        return casero;
+    }
+
+    public void setCasero(Usuario casero) {
+        this.casero = casero;
     }
 }

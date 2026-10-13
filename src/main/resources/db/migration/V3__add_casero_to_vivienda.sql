@@ -1,5 +1,5 @@
 ALTER TABLE vivienda
-    ADD COLUMN casero_id BIGINT NOT NULL;
+    ADD COLUMN casero_id BIGINT NULL;
 
 ALTER TABLE vivienda
     ADD CONSTRAINT fk_vivienda_casero

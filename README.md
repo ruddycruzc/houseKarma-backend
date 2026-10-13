@@ -217,11 +217,10 @@ Antes de iniciar el proyecto, es necesario disponer de:
 ### 1. Clonar el repositorio
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
+git clone https://github.com/housekarma/houseKarma-backend.git
 cd houseKarma-backend
 ```
 
-Sustituye `<URL_DEL_REPOSITORIO>` por la URL real del repositorio.
 
 ### 2. Configurar las variables de entorno
 

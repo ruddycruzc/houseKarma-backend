@@ -396,6 +396,55 @@ Las comprobaciones que se documentarán incluyen:
 > [!TIP]
 > Para documentar una prueba de persistencia, registra la operación realizada en Postman, consulta después el registro correspondiente en DBeaver y anota el resultado. Así se puede seguir el recorrido de una petición desde la API hasta la base de datos.
 
+## Ejemplo
+
+El diagrama muestra las tres tablas creadas por las migraciones: un usuario puede aparecer como inquilino o casero en varias experiencias, y una vivienda puede estar asociada opcionalmente a un casero. Cada experiencia referencia exactamente una vivienda, un inquilino y un casero.
+
+<!-- mermaid-checked: every attribute is `<type> <name> [<key>] ["<description>"]` with at most one of PK/FK/UK, no \n in descriptions, no {} in descriptions, every relationship label is double-quoted -->
+```mermaid
+erDiagram
+    usuario ||--o{ experiencia_alquiler : "participa como inquilino"
+    usuario ||--o{ experiencia_alquiler : "participa como casero"
+    usuario o|--o{ vivienda : "figura como casero"
+    vivienda ||--o{ experiencia_alquiler : "registra"
+
+    usuario {
+        bigint id PK
+        string nombre
+        string apellidos
+        string email UK
+        string password
+        string telefono
+        string avatar
+        string rol
+        datetime fecha_registro
+    }
+    vivienda {
+        bigint id PK
+        bigint casero_id FK
+        string direccion
+        string numero
+        string complemento
+        string localidad
+        string codigo_postal
+        string provincia
+        string direccion_normalizada UK
+        datetime fecha_registro
+    }
+    experiencia_alquiler {
+        bigint id PK
+        bigint vivienda_id FK
+        bigint inquilino_id FK
+        bigint casero_id FK
+        date fecha_inicio
+        date fecha_fin
+        string estado
+        boolean confirmacion_inquilino
+        boolean confirmacion_casero
+        datetime fecha_registro
+    }
+```
+
 ---
 
 ## Autenticación y seguridad

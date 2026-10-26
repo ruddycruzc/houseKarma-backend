@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.housekarma.housekarma.experiencia.dto.ExperienciaAlquilerPendienteResponse;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/experiencias")
@@ -32,8 +34,7 @@ public class ExperienciaAlquilerController {
                 request.viviendaId(),
                 request.inquilinoId(),
                 request.fechaInicio(),
-                request.fechaFin()
-        );
+                request.fechaFin());
 
         return ExperienciaAlquilerResponse.desde(experiencia);
     }
@@ -45,9 +46,17 @@ public class ExperienciaAlquilerController {
 
         var experiencia = experienciaService.confirmarExperiencia(
                 authentication.getName(),
-                id
-        );
+                id);
 
         return ExperienciaAlquilerResponse.desde(experiencia);
+    }
+
+    @GetMapping("/pendientes/casero")
+    @PreAuthorize("hasRole('CASERO')")
+    public List<ExperienciaAlquilerPendienteResponse> obtenerPendientesCasero(
+            Authentication authentication) {
+
+        return experienciaService.obtenerPendientesCasero(
+                authentication.getName());
     }
 }

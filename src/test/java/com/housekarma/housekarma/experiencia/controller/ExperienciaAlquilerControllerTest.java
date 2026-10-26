@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.housekarma.housekarma.experiencia.dto.ExperienciaAlquilerRequest;
 import com.housekarma.housekarma.experiencia.entity.ExperienciaAlquiler;
 import com.housekarma.housekarma.experiencia.service.ExperienciaAlquilerService;
+
 import com.housekarma.housekarma.usuario.entity.Rol;
 import com.housekarma.housekarma.usuario.entity.Usuario;
 import com.housekarma.housekarma.vivienda.entity.Vivienda;
@@ -27,131 +28,199 @@ import com.housekarma.housekarma.auth.service.JwtService;
 import com.housekarma.housekarma.usuario.repository.UsuarioRepository;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
+import com.housekarma.housekarma.experiencia.dto.ExperienciaAlquilerPendienteResponse;
+
+import java.util.List;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+
+import org.springframework.context.annotation.Import;
+import com.housekarma.housekarma.config.SecurityConfig;
+
 @WebMvcTest(ExperienciaAlquilerController.class)
+@Import(SecurityConfig.class)
 class ExperienciaAlquilerControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .findAndRegisterModules();
+        private final ObjectMapper objectMapper = new ObjectMapper()
+                        .findAndRegisterModules();
 
-    @MockitoBean
-    private ExperienciaAlquilerService experienciaService;
+        @MockitoBean
+        private ExperienciaAlquilerService experienciaService;
 
-    @MockitoBean
-    private JwtService jwtService;
+        @MockitoBean
+        private JwtService jwtService;
 
-    @MockitoBean
-    private UsuarioRepository usuarioRepository;
+        @MockitoBean
+        private UsuarioRepository usuarioRepository;
 
-    @Test
-    @WithMockUser(username = "inquilino@test.com", roles = "INQUILINO")
-    void debeRegistrarExperienciaYDevolverCreated() throws Exception {
-        ExperienciaAlquilerRequest request = new ExperienciaAlquilerRequest(
-                10L,
-                null,
-                LocalDate.of(2025, 1, 1),
-                null);
+        @Test
+        @WithMockUser(username = "inquilino@test.com", roles = "INQUILINO")
+        void debeRegistrarExperienciaYDevolverCreated() throws Exception {
+                ExperienciaAlquilerRequest request = new ExperienciaAlquilerRequest(
+                                10L,
+                                null,
+                                LocalDate.of(2025, 1, 1),
+                                null);
 
-        when(experienciaService.registrarExperiencia(
-                eq("inquilino@test.com"),
-                eq(10L),
-                isNull(),
-                eq(LocalDate.of(2025, 1, 1)),
-                isNull())).thenReturn(crearExperiencia());
+                when(experienciaService.registrarExperiencia(
+                                eq("inquilino@test.com"),
+                                eq(10L),
+                                isNull(),
+                                eq(LocalDate.of(2025, 1, 1)),
+                                isNull())).thenReturn(crearExperiencia());
 
-        mockMvc.perform(post("/api/experiencias")
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.viviendaId").value(10))
-                .andExpect(jsonPath("$.inquilinoId").value(1))
-                .andExpect(jsonPath("$.caseroId").value(2))
-                .andExpect(jsonPath("$.estado")
-                        .value("PENDIENTE_CONFIRMACION"));
+                mockMvc.perform(post("/api/experiencias")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.viviendaId").value(10))
+                                .andExpect(jsonPath("$.inquilinoId").value(1))
+                                .andExpect(jsonPath("$.caseroId").value(2))
+                                .andExpect(jsonPath("$.estado")
+                                                .value("PENDIENTE_CONFIRMACION"));
 
-        verify(experienciaService).registrarExperiencia(
-                eq("inquilino@test.com"),
-                eq(10L),
-                isNull(),
-                eq(LocalDate.of(2025, 1, 1)),
-                isNull());
-    }
+                verify(experienciaService).registrarExperiencia(
+                                eq("inquilino@test.com"),
+                                eq(10L),
+                                isNull(),
+                                eq(LocalDate.of(2025, 1, 1)),
+                                isNull());
+        }
 
-    @Test
-    @WithMockUser(username = "casero@test.com", roles = "CASERO")
-    void debeConfirmarExperienciaYDevolverOk() throws Exception {
-        ExperienciaAlquiler experiencia = crearExperiencia();
-        experiencia.setConfirmacionCasero(true);
-        experiencia.setEstado(
-                ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA);
+        @Test
+        @WithMockUser(username = "casero@test.com", roles = "CASERO")
+        void debeConfirmarExperienciaYDevolverOk() throws Exception {
+                ExperienciaAlquiler experiencia = crearExperiencia();
+                experiencia.setConfirmacionCasero(true);
+                experiencia.setEstado(
+                                ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA);
 
-        when(experienciaService.confirmarExperiencia(
-                "casero@test.com", 100L))
-                .thenReturn(experiencia);
+                when(experienciaService.confirmarExperiencia(
+                                "casero@test.com", 100L))
+                                .thenReturn(experiencia);
 
-        mockMvc.perform(patch("/api/experiencias/100/confirmacion")
-                .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.confirmacionCasero").value(true))
-                .andExpect(jsonPath("$.estado").value("CONFIRMADA"));
+                mockMvc.perform(patch("/api/experiencias/100/confirmacion")
+                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.confirmacionCasero").value(true))
+                                .andExpect(jsonPath("$.estado").value("CONFIRMADA"));
 
-        verify(experienciaService).confirmarExperiencia(
-                "casero@test.com", 100L);
-    }
+                verify(experienciaService).confirmarExperiencia(
+                                "casero@test.com", 100L);
+        }
 
-    private ExperienciaAlquiler crearExperiencia() {
-        Usuario inquilino = crearUsuario(
-                1L, "inquilino@test.com", Rol.INQUILINO);
-        Usuario casero = crearUsuario(
-                2L, "casero@test.com", Rol.CASERO);
+        @Test
+        @WithMockUser(username = "casero@test.com", roles = "CASERO")
+        void debeObtenerExperienciasPendientesDelCasero() throws Exception {
+                ExperienciaAlquilerPendienteResponse pendiente = new ExperienciaAlquilerPendienteResponse(
+                                100L,
+                                "Usuario",
+                                "Prueba",
+                                10L,
+                                "Calle Corrida",
+                                "10",
+                                null,
+                                "Gijón",
+                                "33206",
+                                "Asturias",
+                                LocalDate.of(2025, 1, 1),
+                                null,
+                                ExperienciaAlquiler.EstadoExperiencia.PENDIENTE_CONFIRMACION,
+                                true,
+                                false,
+                                LocalDateTime.of(2025, 1, 1, 10, 30));
 
-        Vivienda vivienda = new Vivienda() {
-            @Override
-            public Long getId() {
-                return 10L;
-            }
-        };
-        vivienda.setCasero(casero);
+                when(experienciaService.obtenerPendientesCasero("casero@test.com"))
+                                .thenReturn(List.of(pendiente));
 
-        ExperienciaAlquiler experiencia = new ExperienciaAlquiler() {
-            @Override
-            public Long getId() {
-                return 100L;
-            }
-        };
+                mockMvc.perform(get("/api/experiencias/pendientes/casero"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[0].id").value(100))
+                                .andExpect(jsonPath("$[0].inquilinoNombre").value("Usuario"))
+                                .andExpect(jsonPath("$[0].inquilinoApellidos").value("Prueba"))
+                                .andExpect(jsonPath("$[0].viviendaId").value(10))
+                                .andExpect(jsonPath("$[0].estado")
+                                                .value("PENDIENTE_CONFIRMACION"))
+                                .andExpect(jsonPath("$[0].confirmacionCasero").value(false))
+                                .andExpect(jsonPath("$.length()").value(1));
 
-        experiencia.setVivienda(vivienda);
-        experiencia.setInquilino(inquilino);
-        experiencia.setCasero(casero);
-        experiencia.setFechaInicio(LocalDate.of(2025, 1, 1));
-        experiencia.setEstado(
-                ExperienciaAlquiler.EstadoExperiencia.PENDIENTE_CONFIRMACION);
-        experiencia.setConfirmacionInquilino(true);
-        experiencia.setConfirmacionCasero(false);
-        experiencia.setFechaRegistro(
-                LocalDateTime.of(2025, 1, 1, 10, 30));
+                verify(experienciaService)
+                                .obtenerPendientesCasero("casero@test.com");
+        }
 
-        return experiencia;
-    }
+        private ExperienciaAlquiler crearExperiencia() {
+                Usuario inquilino = crearUsuario(
+                                1L, "inquilino@test.com", Rol.INQUILINO);
+                Usuario casero = crearUsuario(
+                                2L, "casero@test.com", Rol.CASERO);
 
-    private Usuario crearUsuario(Long id, String email, Rol rol) {
-        Usuario usuario = new Usuario() {
-            @Override
-            public Long getId() {
-                return id;
-            }
-        };
+                Vivienda vivienda = new Vivienda() {
+                        @Override
+                        public Long getId() {
+                                return 10L;
+                        }
+                };
+                vivienda.setCasero(casero);
 
-        usuario.setNombre("Usuario");
-        usuario.setApellidos("Prueba");
-        usuario.setEmail(email);
-        usuario.setPassword("password-cifrada");
-        usuario.setRol(rol);
-        usuario.setFechaRegistro(LocalDateTime.now());
+                ExperienciaAlquiler experiencia = new ExperienciaAlquiler() {
+                        @Override
+                        public Long getId() {
+                                return 100L;
+                        }
+                };
 
-        return usuario;
-    }
+                experiencia.setVivienda(vivienda);
+                experiencia.setInquilino(inquilino);
+                experiencia.setCasero(casero);
+                experiencia.setFechaInicio(LocalDate.of(2025, 1, 1));
+                experiencia.setEstado(
+                                ExperienciaAlquiler.EstadoExperiencia.PENDIENTE_CONFIRMACION);
+                experiencia.setConfirmacionInquilino(true);
+                experiencia.setConfirmacionCasero(false);
+                experiencia.setFechaRegistro(
+                                LocalDateTime.of(2025, 1, 1, 10, 30));
+
+                return experiencia;
+        }
+
+        private Usuario crearUsuario(Long id, String email, Rol rol) {
+                Usuario usuario = new Usuario() {
+                        @Override
+                        public Long getId() {
+                                return id;
+                        }
+                };
+
+                usuario.setNombre("Usuario");
+                usuario.setApellidos("Prueba");
+                usuario.setEmail(email);
+                usuario.setPassword("password-cifrada");
+                usuario.setRol(rol);
+                usuario.setFechaRegistro(LocalDateTime.now());
+
+                return usuario;
+        }
+
+        @Test
+        @WithMockUser(username = "inquilino@test.com", roles = "INQUILINO")
+        void debeRechazarConsultaDePendientesSiEsInquilino() throws Exception {
+
+                mockMvc.perform(get("/api/experiencias/pendientes/casero"))
+                                .andExpect(status().isForbidden());
+
+                verifyNoInteractions(experienciaService);
+        }
+
+        @Test
+        void debeRechazarConsultaDePendientesSinAutenticacion() throws Exception {
+
+                mockMvc.perform(get("/api/experiencias/pendientes/casero"))
+                                .andExpect(status().is4xxClientError());
+
+                verifyNoInteractions(experienciaService);
+        }
 }

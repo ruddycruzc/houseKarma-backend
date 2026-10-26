@@ -9,7 +9,9 @@ import com.housekarma.housekarma.vivienda.entity.Vivienda;
 import com.housekarma.housekarma.vivienda.repository.ViviendaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.housekarma.housekarma.experiencia.dto.ExperienciaAlquilerPendienteResponse;
 
+import java.util.List;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -157,5 +159,27 @@ public class ExperienciaAlquilerService {
         }
 
         return experienciaRepository.save(experiencia);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExperienciaAlquilerPendienteResponse> obtenerPendientesCasero(
+            String emailCasero) {
+
+        Usuario casero = usuarioRepository.findByEmail(emailCasero)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No se ha encontrado al usuario autenticado"));
+
+        if (casero.getRol() != Rol.CASERO) {
+            throw new IllegalArgumentException(
+                    "Solo un casero puede consultar estas experiencias");
+        }
+
+        return experienciaRepository
+                .findAllByCaseroIdAndEstadoAndConfirmacionCaseroFalse(
+                        casero.getId(),
+                        ExperienciaAlquiler.EstadoExperiencia.PENDIENTE_CONFIRMACION)
+                .stream()
+                .map(ExperienciaAlquilerPendienteResponse::desde)
+                .toList();
     }
 }

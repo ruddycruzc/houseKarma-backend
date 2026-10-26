@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+
+import com.housekarma.housekarma.experiencia.dto.ExperienciaAlquilerListadoResponse;
 import com.housekarma.housekarma.experiencia.dto.ExperienciaAlquilerPendienteResponse;
 import java.util.List;
 
@@ -57,6 +59,14 @@ public class ExperienciaAlquilerController {
             Authentication authentication) {
 
         return experienciaService.obtenerPendientesCasero(
+                authentication.getName());
+    }
+
+    @GetMapping("/mis-experiencias")
+    public List<ExperienciaAlquilerListadoResponse> obtenerMisExperiencias(
+            Authentication authentication) {
+
+        return experienciaService.obtenerMisExperiencias(
                 authentication.getName());
     }
 }

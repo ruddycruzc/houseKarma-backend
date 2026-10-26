@@ -9,6 +9,8 @@ import com.housekarma.housekarma.vivienda.entity.Vivienda;
 import com.housekarma.housekarma.vivienda.repository.ViviendaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.housekarma.housekarma.experiencia.dto.ExperienciaAlquilerListadoResponse;
 import com.housekarma.housekarma.experiencia.dto.ExperienciaAlquilerPendienteResponse;
 
 import java.util.List;
@@ -180,6 +182,34 @@ public class ExperienciaAlquilerService {
                         ExperienciaAlquiler.EstadoExperiencia.PENDIENTE_CONFIRMACION)
                 .stream()
                 .map(ExperienciaAlquilerPendienteResponse::desde)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExperienciaAlquilerListadoResponse> obtenerMisExperiencias(
+            String emailUsuario) {
+
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No se ha encontrado al usuario autenticado"));
+
+        List<ExperienciaAlquiler> experiencias;
+
+        if (usuario.getRol() == Rol.INQUILINO) {
+            experiencias = experienciaRepository
+                    .findAllByInquilinoId(usuario.getId());
+
+        } else if (usuario.getRol() == Rol.CASERO) {
+            experiencias = experienciaRepository
+                    .findAllByCaseroId(usuario.getId());
+
+        } else {
+            throw new IllegalArgumentException(
+                    "El rol no permite consultar estas experiencias");
+        }
+
+        return experiencias.stream()
+                .map(ExperienciaAlquilerListadoResponse::desde)
                 .toList();
     }
 }

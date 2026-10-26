@@ -12,6 +12,8 @@ public interface ExperienciaAlquilerRepository
 
         List<ExperienciaAlquiler> findAllByInquilinoId(Long inquilinoId);
 
+        List<ExperienciaAlquiler> findAllByCaseroId(Long caseroId);
+
         List<ExperienciaAlquiler> findAllByCaseroIdAndEstado(
                         Long caseroId,
                         ExperienciaAlquiler.EstadoExperiencia estado);

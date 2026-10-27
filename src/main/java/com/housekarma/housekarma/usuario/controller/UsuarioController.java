@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import com.housekarma.housekarma.usuario.dto.UsuarioPerfilActualizarRequest;
+import org.springframework.web.bind.annotation.PatchMapping;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -65,6 +67,27 @@ public class UsuarioController {
         String email = authentication.getName();
 
         Usuario usuario = usuarioService.buscarPorEmail(email);
+
+        UsuarioResponse response = new UsuarioResponse(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getApellidos(),
+                usuario.getEmail(),
+                usuario.getTelefono(),
+                usuario.getAvatar(),
+                usuario.getRol().name());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<UsuarioResponse> actualizarMiPerfil(
+            Authentication authentication,
+            @Valid @RequestBody UsuarioPerfilActualizarRequest request) {
+
+        String email = authentication.getName();
+
+        Usuario usuario = usuarioService.actualizarPerfil(email, request);
 
         UsuarioResponse response = new UsuarioResponse(
                 usuario.getId(),

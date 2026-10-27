@@ -7,6 +7,7 @@ import com.housekarma.housekarma.usuario.entity.Usuario;
 import com.housekarma.housekarma.usuario.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.housekarma.housekarma.usuario.dto.UsuarioPerfilActualizarRequest;
 
 import java.time.LocalDateTime;
 
@@ -57,4 +58,19 @@ public class UsuarioService {
         return usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new UsuarioNoEncontradoException(email));
     }
+
+    public Usuario actualizarPerfil(
+            String email,
+            UsuarioPerfilActualizarRequest request) {
+
+        Usuario usuario = buscarPorEmail(email);
+
+        usuario.setNombre(request.nombre());
+        usuario.setApellidos(request.apellidos());
+        usuario.setTelefono(request.telefono());
+        usuario.setAvatar(request.avatar());
+
+        return usuarioRepository.save(usuario);
+    }
+
 }

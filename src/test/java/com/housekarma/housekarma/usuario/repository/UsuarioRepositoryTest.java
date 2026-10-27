@@ -103,7 +103,7 @@ class UsuarioRepositoryTest {
                 "GARCÍA");
 
         assertThat(resultados)
-                .extracting(Usuario::getEmail)
+                .extracting(usuario -> usuario.getEmail())
                 .contains("ana.garcia.test@example.com");
     }
 
@@ -126,7 +126,7 @@ class UsuarioRepositoryTest {
                 "García");
 
         assertThat(resultados)
-                .extracting(Usuario::getEmail)
+                .extracting(usuario -> usuario.getEmail())
                 .containsExactly("carlos.garcia.test@example.com");
     }
 

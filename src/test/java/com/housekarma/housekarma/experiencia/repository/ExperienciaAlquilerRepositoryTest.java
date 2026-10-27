@@ -115,10 +115,9 @@ class ExperienciaAlquilerRepositoryTest {
                         EstadoExperiencia.PENDIENTE_CONFIRMACION
                 );
 
-        assertThat(resultado)
-                .hasSize(1)
-                .extracting(ExperienciaAlquiler::getId)
-                .containsExactly(pendiente.getId());
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).getId())
+                .isEqualTo(pendiente.getId());
     }
 
     private Usuario crearUsuario(String email, Rol rol) {

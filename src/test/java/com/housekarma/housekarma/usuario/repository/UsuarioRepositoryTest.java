@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class UsuarioRepositoryTest {
@@ -86,4 +88,71 @@ class UsuarioRepositoryTest {
         assertFalse(usuarioRepository.existsByEmail("noexiste@example.com"));
     }
 
+    @Test
+    void debeBuscarUsuariosPorNombreOApellidosIgnorandoMayusculas() {
+        Usuario casero = crearUsuario(
+                "Ana",
+                "García López",
+                "ana.garcia.test@example.com",
+                Rol.CASERO);
+
+        usuarioRepository.save(casero);
+
+        List<Usuario> resultados = usuarioRepository.buscarPorRolYNombreOApellidos(
+                Rol.CASERO,
+                "GARCÍA");
+
+        assertThat(resultados)
+                .extracting(Usuario::getEmail)
+                .contains("ana.garcia.test@example.com");
+    }
+
+    @Test
+    void debeExcluirUsuariosDeOtrosRolesEnLaBusqueda() {
+        usuarioRepository.save(crearUsuario(
+                "Carlos",
+                "García López",
+                "carlos.garcia.test@example.com",
+                Rol.CASERO));
+
+        usuarioRepository.save(crearUsuario(
+                "Lucía",
+                "García López",
+                "lucia.garcia.test@example.com",
+                Rol.INQUILINO));
+
+        List<Usuario> resultados = usuarioRepository.buscarPorRolYNombreOApellidos(
+                Rol.CASERO,
+                "García");
+
+        assertThat(resultados)
+                .extracting(Usuario::getEmail)
+                .containsExactly("carlos.garcia.test@example.com");
+    }
+
+    @Test
+    void debeDevolverListaVaciaSiNoHayCoincidencias() {
+        List<Usuario> resultados = usuarioRepository.buscarPorRolYNombreOApellidos(
+                Rol.CASERO,
+                "NombreInexistente");
+
+        assertThat(resultados).isEmpty();
+    }
+
+    private Usuario crearUsuario(
+            String nombre,
+            String apellidos,
+            String email,
+            Rol rol) {
+        Usuario usuario = new Usuario();
+
+        usuario.setNombre(nombre);
+        usuario.setApellidos(apellidos);
+        usuario.setEmail(email);
+        usuario.setPassword("password-de-prueba");
+        usuario.setRol(rol);
+        usuario.setFechaRegistro(LocalDateTime.now());
+
+        return usuario;
+    }
 }

@@ -2,6 +2,7 @@
 package com.housekarma.housekarma.usuario.controller;
 
 import com.housekarma.housekarma.usuario.dto.UsuarioPerfilResponse;
+import com.housekarma.housekarma.usuario.dto.UsuarioPublicoResponse;
 import com.housekarma.housekarma.usuario.dto.UsuarioRegistroRequest;
 import com.housekarma.housekarma.usuario.dto.UsuarioResponse;
 import com.housekarma.housekarma.usuario.entity.Usuario;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.housekarma.housekarma.usuario.dto.UsuarioPerfilActualizarRequest;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
 import com.housekarma.housekarma.usuario.dto.UsuarioBusquedaResponse;
 import java.util.List;
 
@@ -124,6 +127,22 @@ public class UsuarioController {
                 .toList();
 
         return ResponseEntity.ok(respuesta);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UsuarioPublicoResponse> obtenerPerfilPublico(
+            @PathVariable Long id) {
+
+        Usuario usuario = usuarioService.buscarPorId(id);
+
+        UsuarioPublicoResponse response = new UsuarioPublicoResponse(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getApellidos(),
+                usuario.getAvatar(),
+                usuario.getRol().name());
+
+        return ResponseEntity.ok(response);
     }
 
 }

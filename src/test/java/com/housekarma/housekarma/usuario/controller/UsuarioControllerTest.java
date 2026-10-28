@@ -1,4 +1,3 @@
-
 package com.housekarma.housekarma.usuario.controller;
 
 import com.housekarma.housekarma.config.GlobalExceptionHandler;
@@ -23,6 +22,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioControllerTest {
@@ -211,6 +212,147 @@ class UsuarioControllerTest {
                                 .andExpect(jsonPath("$.password").doesNotExist());
 
                 verify(usuarioService).buscarPorEmail("ana@example.com");
+        }
+
+        @Test
+        void debeBuscarUsuariosPorNombreYDevolverDatosPublicos() throws Exception {
+                Usuario usuario = new Usuario();
+                usuario.setNombre("Carlos");
+                usuario.setApellidos("Fernández López");
+                usuario.setAvatar("https://example.com/avatar.png");
+                usuario.setRol(Rol.CASERO);
+
+                when(usuarioService.buscarUsuariosPorNombre(
+                                "Fernández", "ana@example.com"))
+                                .thenReturn(List.of(usuario));
+
+                mockMvc.perform(get("/api/usuarios/buscar-usuarios")
+                                .param("termino", "Fernández")
+                                .principal(new UsernamePasswordAuthenticationToken(
+                                                "ana@example.com", null)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[0].nombre").value("Carlos"))
+                                .andExpect(jsonPath("$[0].apellidos")
+                                                .value("Fernández López"))
+                                .andExpect(jsonPath("$[0].avatar")
+                                                .value("https://example.com/avatar.png"))
+                                .andExpect(jsonPath("$[0].rol").value("CASERO"))
+                                .andExpect(jsonPath("$[0].email").doesNotExist())
+                                .andExpect(jsonPath("$[0].telefono").doesNotExist())
+                                .andExpect(jsonPath("$[0].password").doesNotExist());
+
+                verify(usuarioService).buscarUsuariosPorNombre(
+                                "Fernández", "ana@example.com");
+        }
+
+        @Test
+        void debeDevolverListaVaciaCuandoNoHayUsuariosCoincidentes()
+                        throws Exception {
+
+                when(usuarioService.buscarUsuariosPorNombre(
+                                "NoExiste", "ana@example.com"))
+                                .thenReturn(List.of());
+
+                mockMvc.perform(get("/api/usuarios/buscar-usuarios")
+                                .param("termino", "NoExiste")
+                                .principal(new UsernamePasswordAuthenticationToken(
+                                                "ana@example.com", null)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$").isEmpty());
+
+                verify(usuarioService).buscarUsuariosPorNombre(
+                                "NoExiste", "ana@example.com");
+        }
+
+        @Test
+        void debeObtenerMiPerfilUsandoElEmailAutenticado() throws Exception {
+                Usuario usuario = new Usuario();
+                usuario.setNombre("Ana");
+                usuario.setApellidos("García");
+                usuario.setEmail("ana@example.com");
+                usuario.setTelefono("600123456");
+                usuario.setAvatar("https://example.com/avatar.png");
+                usuario.setRol(Rol.INQUILINO);
+
+                when(usuarioService.buscarPorEmail("ana@example.com"))
+                                .thenReturn(usuario);
+
+                mockMvc.perform(get("/api/usuarios/me")
+                                .principal(new UsernamePasswordAuthenticationToken(
+                                                "ana@example.com", null)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.nombre").value("Ana"))
+                                .andExpect(jsonPath("$.apellidos").value("García"))
+                                .andExpect(jsonPath("$.email").value("ana@example.com"))
+                                .andExpect(jsonPath("$.telefono").value("600123456"))
+                                .andExpect(jsonPath("$.avatar")
+                                                .value("https://example.com/avatar.png"))
+                                .andExpect(jsonPath("$.rol").value("INQUILINO"))
+                                .andExpect(jsonPath("$.password").doesNotExist());
+
+                verify(usuarioService).buscarPorEmail("ana@example.com");
+        }
+
+        @Test
+        void debeActualizarMiPerfilUsandoElEmailAutenticado() throws Exception {
+                Usuario usuario = new Usuario();
+                usuario.setNombre("Ana Actualizada");
+                usuario.setApellidos("García López");
+                usuario.setEmail("ana@example.com");
+                usuario.setTelefono("611223344");
+                usuario.setAvatar("https://example.com/nuevo-avatar.png");
+                usuario.setRol(Rol.INQUILINO);
+
+                when(usuarioService.actualizarPerfil(
+                                org.mockito.ArgumentMatchers.eq("ana@example.com"),
+                                any()))
+                                .thenReturn(usuario);
+
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .patch("/api/usuarios/me")
+                                .principal(new UsernamePasswordAuthenticationToken(
+                                                "ana@example.com", null))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "nombre": "Ana Actualizada",
+                                                  "apellidos": "García López",
+                                                  "telefono": "611223344",
+                                                  "avatar": "https://example.com/nuevo-avatar.png"
+                                                }
+                                                """))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.nombre").value("Ana Actualizada"))
+                                .andExpect(jsonPath("$.apellidos").value("García López"))
+                                .andExpect(jsonPath("$.email").value("ana@example.com"))
+                                .andExpect(jsonPath("$.telefono").value("611223344"))
+                                .andExpect(jsonPath("$.avatar")
+                                                .value("https://example.com/nuevo-avatar.png"))
+                                .andExpect(jsonPath("$.rol").value("INQUILINO"));
+
+                verify(usuarioService).actualizarPerfil(
+                                org.mockito.ArgumentMatchers.eq("ana@example.com"),
+                                any());
+        }
+
+        @Test
+        void debeRechazarLaActualizacionSiElNombreEstaVacio() throws Exception {
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .patch("/api/usuarios/me")
+                                .principal(new UsernamePasswordAuthenticationToken(
+                                                "ana@example.com", null))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "nombre": "",
+                                                  "apellidos": "García",
+                                                  "telefono": "600123456",
+                                                  "avatar": "https://example.com/avatar.png"
+                                                }
+                                                """))
+                                .andExpect(status().isBadRequest());
+
+                org.mockito.Mockito.verifyNoInteractions(usuarioService);
         }
 
 }

@@ -440,4 +440,109 @@ class ExperienciaAlquilerServiceTest {
 
                 verifyNoInteractions(experienciaRepository);
         }
+
+        @Test
+        void debeRechazarLaConfirmacionDuplicadaDelInquilino() {
+                ExperienciaAlquiler experiencia = crearExperienciaPendiente();
+                experiencia.setConfirmacionInquilino(true);
+
+                when(usuarioRepository.findByEmail(inquilino.getEmail()))
+                                .thenReturn(Optional.of(inquilino));
+                when(experienciaRepository.findById(1L))
+                                .thenReturn(Optional.of(experiencia));
+
+                assertThrows(
+                                IllegalArgumentException.class,
+                                () -> experienciaService.confirmarExperiencia(
+                                                inquilino.getEmail(), 1L));
+
+                verify(experienciaRepository, never())
+                                .save(any(ExperienciaAlquiler.class));
+        }
+
+        @Test
+        void debeRechazarLaConfirmacionSiElUsuarioNoExiste() {
+                when(usuarioRepository.findByEmail("desconocido@test.com"))
+                                .thenReturn(Optional.empty());
+
+                assertThrows(
+                                IllegalArgumentException.class,
+                                () -> experienciaService.confirmarExperiencia(
+                                                "desconocido@test.com", 1L));
+
+                verifyNoInteractions(experienciaRepository);
+        }
+
+        @Test
+        void debeRechazarLaConfirmacionSiLaExperienciaNoExiste() {
+                when(usuarioRepository.findByEmail(casero.getEmail()))
+                                .thenReturn(Optional.of(casero));
+                when(experienciaRepository.findById(999L))
+                                .thenReturn(Optional.empty());
+
+                assertThrows(
+                                IllegalArgumentException.class,
+                                () -> experienciaService.confirmarExperiencia(
+                                                casero.getEmail(), 999L));
+
+                verify(experienciaRepository, never())
+                                .save(any(ExperienciaAlquiler.class));
+        }
+
+        @Test
+        void debeDevolverLasExperienciasDelInquilinoAutenticado() {
+                ExperienciaAlquiler experiencia = crearExperienciaPendiente();
+
+                when(usuarioRepository.findByEmail(inquilino.getEmail()))
+                                .thenReturn(Optional.of(inquilino));
+                when(experienciaRepository.findAllByInquilinoId(inquilino.getId()))
+                                .thenReturn(java.util.List.of(experiencia));
+
+                var resultado = experienciaService
+                                .obtenerMisExperiencias(inquilino.getEmail());
+
+                assertEquals(1, resultado.size());
+
+                verify(experienciaRepository)
+                                .findAllByInquilinoId(inquilino.getId());
+                verify(experienciaRepository, never())
+                                .findAllByCaseroId(any(Long.class));
+        }
+
+        @Test
+        void debeDevolverLasExperienciasDelCaseroAutenticado() {
+                ExperienciaAlquiler experiencia = crearExperienciaPendiente();
+
+                when(usuarioRepository.findByEmail(casero.getEmail()))
+                                .thenReturn(Optional.of(casero));
+                when(experienciaRepository.findAllByCaseroId(casero.getId()))
+                                .thenReturn(java.util.List.of(experiencia));
+
+                var resultado = experienciaService
+                                .obtenerMisExperiencias(casero.getEmail());
+
+                assertEquals(1, resultado.size());
+
+                verify(experienciaRepository)
+                                .findAllByCaseroId(casero.getId());
+                verify(experienciaRepository, never())
+                                .findAllByInquilinoId(any(Long.class));
+        }
+
+        @Test
+        void debeRechazarLaConsultaDeExperienciasPropiasDeUnAdmin() {
+                Usuario admin = crearUsuario(
+                                3L, "admin@test.com", Rol.ADMIN);
+
+                when(usuarioRepository.findByEmail(admin.getEmail()))
+                                .thenReturn(Optional.of(admin));
+
+                assertThrows(
+                                IllegalArgumentException.class,
+                                () -> experienciaService.obtenerMisExperiencias(
+                                                admin.getEmail()));
+
+                verifyNoInteractions(experienciaRepository);
+        }
+
 }

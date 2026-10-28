@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -174,6 +175,107 @@ class UsuarioServiceTest {
                 verify(usuarioRepository).findByEmail(email);
         }
 
+        @Test
+        void debeBuscarCaserosCuandoElUsuarioEsInquilino() {
+                String email = "ana@example.com";
+                String termino = "García";
+
+                Usuario usuarioActual = crearUsuario(
+                                "Ana", "López", email, Rol.INQUILINO);
+
+                Usuario casero = crearUsuario(
+                                "Carlos", "García", "carlos@example.com", Rol.CASERO);
+
+                when(usuarioRepository.findByEmail(email))
+                                .thenReturn(Optional.of(usuarioActual));
+
+                when(usuarioRepository.buscarPorRolYNombreOApellidos(
+                                Rol.CASERO, termino))
+                                .thenReturn(List.of(casero));
+
+                List<Usuario> resultado = usuarioService.buscarUsuariosPorNombre(termino, email);
+
+                assertEquals(1, resultado.size());
+                assertSame(casero, resultado.get(0));
+
+                verify(usuarioRepository)
+                                .buscarPorRolYNombreOApellidos(Rol.CASERO, termino);
+        }
+
+        @Test
+        void debeBuscarInquilinosCuandoElUsuarioEsCasero() {
+                String email = "carlos@example.com";
+                String termino = "Ana";
+
+                Usuario usuarioActual = crearUsuario(
+                                "Carlos", "López", email, Rol.CASERO);
+
+                Usuario inquilina = crearUsuario(
+                                "Ana", "García", "ana@example.com", Rol.INQUILINO);
+
+                when(usuarioRepository.findByEmail(email))
+                                .thenReturn(Optional.of(usuarioActual));
+
+                when(usuarioRepository.buscarPorRolYNombreOApellidos(
+                                Rol.INQUILINO, termino))
+                                .thenReturn(List.of(inquilina));
+
+                List<Usuario> resultado = usuarioService.buscarUsuariosPorNombre(termino, email);
+
+                assertEquals(1, resultado.size());
+                assertSame(inquilina, resultado.get(0));
+
+                verify(usuarioRepository)
+                                .buscarPorRolYNombreOApellidos(Rol.INQUILINO, termino);
+        }
+
+        @Test
+        void debeRechazarBusquedaCuandoElUsuarioEsAdmin() {
+                String email = "admin@example.com";
+
+                Usuario admin = crearUsuario(
+                                "Admin", "HouseKarma", email, Rol.ADMIN);
+
+                when(usuarioRepository.findByEmail(email))
+                                .thenReturn(Optional.of(admin));
+
+                assertThrows(
+                                IllegalArgumentException.class,
+                                () -> usuarioService.buscarUsuariosPorNombre("Ana", email));
+
+                verify(usuarioRepository, never())
+                                .buscarPorRolYNombreOApellidos(
+                                                any(Rol.class), any(String.class));
+        }
+
+        @Test
+        void debeRechazarBusquedaConTerminoVacio() {
+                assertThrows(
+                                IllegalArgumentException.class,
+                                () -> usuarioService.buscarUsuariosPorNombre(
+                                                "   ", "ana@example.com"));
+        }
+
+        @Test
+        void debeDevolverListaVaciaCuandoNoHayCoincidencias() {
+                String email = "ana@example.com";
+
+                Usuario usuarioActual = crearUsuario(
+                                "Ana", "López", email, Rol.INQUILINO);
+
+                when(usuarioRepository.findByEmail(email))
+                                .thenReturn(Optional.of(usuarioActual));
+
+                when(usuarioRepository.buscarPorRolYNombreOApellidos(
+                                Rol.CASERO, "Inexistente"))
+                                .thenReturn(List.of());
+
+                List<Usuario> resultado = usuarioService.buscarUsuariosPorNombre(
+                                "Inexistente", email);
+
+                assertEquals(0, resultado.size());
+        }
+
         private UsuarioRegistroRequest crearRequest(String rol) {
                 return new UsuarioRegistroRequest(
                                 "Ana",
@@ -215,5 +317,18 @@ class UsuarioServiceTest {
                 verify(usuarioRepository, never()).existsByEmail(request.email());
                 verify(passwordEncoder, never()).encode(any(String.class));
                 verify(usuarioRepository, never()).save(any(Usuario.class));
+        }
+
+        private Usuario crearUsuario(
+                        String nombre,
+                        String apellidos,
+                        String email,
+                        Rol rol) {
+                Usuario usuario = new Usuario();
+                usuario.setNombre(nombre);
+                usuario.setApellidos(apellidos);
+                usuario.setEmail(email);
+                usuario.setRol(rol);
+                return usuario;
         }
 }

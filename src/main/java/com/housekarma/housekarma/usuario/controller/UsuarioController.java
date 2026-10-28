@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.housekarma.housekarma.usuario.dto.UsuarioPerfilActualizarRequest;
 import org.springframework.web.bind.annotation.PatchMapping;
+import com.housekarma.housekarma.usuario.dto.UsuarioBusquedaResponse;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -99,6 +101,29 @@ public class UsuarioController {
                 usuario.getRol().name());
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/buscar-usuarios")
+    public ResponseEntity<List<UsuarioBusquedaResponse>> buscarUsuariosPorNombre(
+            @RequestParam String termino,
+            Authentication authentication) {
+
+        String emailUsuarioActual = authentication.getName();
+
+        List<Usuario> usuarios = usuarioService.buscarUsuariosPorNombre(
+                termino,
+                emailUsuarioActual);
+
+        List<UsuarioBusquedaResponse> respuesta = usuarios.stream()
+                .map(usuario -> new UsuarioBusquedaResponse(
+                        usuario.getId(),
+                        usuario.getNombre(),
+                        usuario.getApellidos(),
+                        usuario.getAvatar(),
+                        usuario.getRol().name()))
+                .toList();
+
+        return ResponseEntity.ok(respuesta);
     }
 
 }

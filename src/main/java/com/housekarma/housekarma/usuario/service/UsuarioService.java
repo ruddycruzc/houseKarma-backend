@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.housekarma.housekarma.usuario.dto.UsuarioPerfilActualizarRequest;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class UsuarioService {
@@ -58,6 +59,32 @@ public class UsuarioService {
         return usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new UsuarioNoEncontradoException(email));
     }
+    public List<Usuario> buscarUsuariosPorNombre(String termino, String emailUsuarioActual) {
+    if (termino == null || termino.isBlank()) {
+        throw new IllegalArgumentException(
+                "El término de búsqueda no puede estar vacío"
+        );
+    }
+
+    Usuario usuarioActual = buscarPorEmail(emailUsuarioActual);
+
+    Rol rolBuscado;
+
+    if (usuarioActual.getRol() == Rol.INQUILINO) {
+        rolBuscado = Rol.CASERO;
+    } else if (usuarioActual.getRol() == Rol.CASERO) {
+        rolBuscado = Rol.INQUILINO;
+    } else {
+        throw new IllegalArgumentException(
+                "El administrador no puede realizar esta búsqueda"
+        );
+    }
+
+    return usuarioRepository.buscarPorRolYNombreOApellidos(
+            rolBuscado,
+            termino.trim()
+    );
+}
 
     public Usuario actualizarPerfil(
             String email,

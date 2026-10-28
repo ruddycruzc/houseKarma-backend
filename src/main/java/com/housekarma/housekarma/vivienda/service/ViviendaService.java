@@ -1,28 +1,39 @@
 package com.housekarma.housekarma.vivienda.service;
 
+import com.housekarma.housekarma.usuario.entity.Rol;
+import com.housekarma.housekarma.usuario.entity.Usuario;
+import com.housekarma.housekarma.usuario.repository.UsuarioRepository;
 import com.housekarma.housekarma.vivienda.entity.Vivienda;
 import com.housekarma.housekarma.vivienda.repository.ViviendaRepository;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 
 @Service
 public class ViviendaService {
 
     private final ViviendaRepository viviendaRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    public ViviendaService(ViviendaRepository viviendaRepository) {
+    public ViviendaService(
+            ViviendaRepository viviendaRepository,
+            UsuarioRepository usuarioRepository) {
         this.viviendaRepository = viviendaRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public String normalizarDireccion(String direccion) {
         String sinTildes = Normalizer.normalize(
                 direccion.trim(),
-                Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+                Normalizer.Form.NFD
+        ).replaceAll("\\p{M}", "");
 
         return sinTildes
                 .replaceAll("\\s+", " ")
@@ -30,20 +41,40 @@ public class ViviendaService {
     }
 
     @Transactional
-    public Vivienda registrar(Vivienda vivienda) {
+    public Vivienda registrar(Vivienda vivienda, String emailCasero) {
         validarVivienda(vivienda);
+
+        Usuario casero = usuarioRepository.findByEmail(emailCasero)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No se ha encontrado el usuario autenticado"
+                ));
+
+        if (casero.getRol() != Rol.CASERO) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Solo un casero puede registrar viviendas"
+            );
+        }
+
+        vivienda.setCasero(casero);
+
         String direccionCompleta = String.join(", ",
                 vivienda.getDireccion().trim(),
                 vivienda.getNumero().trim(),
                 normalizarDireccion(vivienda.getLocalidad()),
                 vivienda.getCodigoPostal().trim(),
-                normalizarDireccion(vivienda.getProvincia()));
+                normalizarDireccion(vivienda.getProvincia())
+        );
 
-        String direccionNormalizada = normalizarDireccion(direccionCompleta);
+        String direccionNormalizada =
+                normalizarDireccion(direccionCompleta);
 
-        if (viviendaRepository.existsByDireccionNormalizada(direccionNormalizada)) {
+        if (viviendaRepository.existsByDireccionNormalizada(
+                direccionNormalizada)) {
             throw new ViviendaDuplicadaException(
-                    "La vivienda con esa dirección ya existe");
+                    "La vivienda con esa dirección ya existe"
+            );
         }
 
         vivienda.setDireccionNormalizada(direccionNormalizada);
@@ -55,37 +86,43 @@ public class ViviendaService {
     private void validarVivienda(Vivienda vivienda) {
         if (vivienda == null) {
             throw new IllegalArgumentException(
-                    "La vivienda no puede ser nula");
+                    "La vivienda no puede ser nula"
+            );
         }
 
         if (vivienda.getDireccion() == null
                 || vivienda.getDireccion().isBlank()) {
             throw new IllegalArgumentException(
-                    "La dirección es obligatoria");
+                    "La dirección es obligatoria"
+            );
         }
 
         if (vivienda.getNumero() == null
                 || vivienda.getNumero().isBlank()) {
             throw new IllegalArgumentException(
-                    "El número es obligatorio");
+                    "El número es obligatorio"
+            );
         }
 
         if (vivienda.getLocalidad() == null
                 || vivienda.getLocalidad().isBlank()) {
             throw new IllegalArgumentException(
-                    "La localidad es obligatoria");
+                    "La localidad es obligatoria"
+            );
         }
 
         if (vivienda.getCodigoPostal() == null
                 || vivienda.getCodigoPostal().isBlank()) {
             throw new IllegalArgumentException(
-                    "El código postal es obligatorio");
+                    "El código postal es obligatorio"
+            );
         }
 
         if (vivienda.getProvincia() == null
                 || vivienda.getProvincia().isBlank()) {
             throw new IllegalArgumentException(
-                    "La provincia es obligatoria");
+                    "La provincia es obligatoria"
+            );
         }
     }
 
@@ -94,10 +131,11 @@ public class ViviendaService {
         return viviendaRepository.findAll();
     }
 
-@Transactional(readOnly = true)
-public Vivienda buscarPorId(Long id) {
-    return viviendaRepository.findById(id)
-            .orElseThrow(() -> new ViviendaNoEncontradaException(
-                    "No se ha encontrado la vivienda con ID: " + id));
-}
+    @Transactional(readOnly = true)
+    public Vivienda buscarPorId(Long id) {
+        return viviendaRepository.findById(id)
+                .orElseThrow(() -> new ViviendaNoEncontradaException(
+                        "No se ha encontrado la vivienda con ID: " + id
+                ));
+    }
 }

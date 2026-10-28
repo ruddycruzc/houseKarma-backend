@@ -8,9 +8,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 
 @RestController
@@ -25,7 +24,10 @@ public class ViviendaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ViviendaResponse registrar(@Valid @RequestBody ViviendaRequest request) {
+    public ViviendaResponse registrar(
+            @Valid @RequestBody ViviendaRequest request,
+            Authentication authentication) {
+
         Vivienda vivienda = new Vivienda();
         vivienda.setDireccion(request.direccion());
         vivienda.setNumero(request.numero());
@@ -34,7 +36,9 @@ public class ViviendaController {
         vivienda.setCodigoPostal(request.codigoPostal());
         vivienda.setProvincia(request.provincia());
 
-        Vivienda registrada = viviendaService.registrar(vivienda);
+        Vivienda registrada = viviendaService.registrar(
+                vivienda,
+                authentication.getName());
 
         return ViviendaResponse.fromEntity(registrada);
     }

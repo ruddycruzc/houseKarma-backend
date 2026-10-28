@@ -23,5 +23,5 @@ public interface ExperienciaAlquilerRepository
 
         List<ExperienciaAlquiler> findAllByCaseroIdAndEstadoAndConfirmacionCaseroFalse(
                         Long caseroId,
-                        ExperienciaAlquiler.EstadoExperiencia estado);
+                        ExperienciaAlquiler.EstadoExperiencia estado);  
 }

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -543,6 +544,70 @@ class ExperienciaAlquilerServiceTest {
                                                 admin.getEmail()));
 
                 verifyNoInteractions(experienciaRepository);
+        }
+
+        @Test
+        void debeFinalizarAutomaticamenteUnaExperienciaConfirmadaConFechaFinAlcanzada() {
+                ExperienciaAlquiler experiencia = crearExperienciaPendiente();
+                experiencia.setEstado(ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA);
+                experiencia.setConfirmacionInquilino(true);
+                experiencia.setConfirmacionCasero(true);
+                experiencia.setFechaFin(LocalDate.now().minusDays(1));
+
+                when(experienciaRepository.findAllByEstado(
+                                ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA))
+                                .thenReturn(List.of(experiencia));
+
+                when(experienciaRepository.save(any(ExperienciaAlquiler.class)))
+                                .thenAnswer(invocation -> invocation.getArgument(0));
+
+                experienciaService.finalizarExperienciasVencidas();
+
+                assertEquals(
+                                ExperienciaAlquiler.EstadoExperiencia.FINALIZADA,
+                                experiencia.getEstado());
+
+                verify(experienciaRepository).save(experiencia);
+        }
+
+        @Test
+        void noDebeFinalizarUnaExperienciaConFechaFinFutura() {
+                ExperienciaAlquiler experiencia = crearExperienciaPendiente();
+                experiencia.setEstado(ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA);
+                experiencia.setFechaFin(LocalDate.now().plusDays(1));
+
+                when(experienciaRepository.findAllByEstado(
+                                ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA))
+                                .thenReturn(List.of(experiencia));
+
+                experienciaService.finalizarExperienciasVencidas();
+
+                assertEquals(
+                                ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA,
+                                experiencia.getEstado());
+
+                verify(experienciaRepository, never())
+                                .save(any(ExperienciaAlquiler.class));
+        }
+
+        @Test
+        void noDebeFinalizarUnaExperienciaSinFechaFin() {
+                ExperienciaAlquiler experiencia = crearExperienciaPendiente();
+                experiencia.setEstado(ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA);
+                experiencia.setFechaFin(null);
+
+                when(experienciaRepository.findAllByEstado(
+                                ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA))
+                                .thenReturn(List.of(experiencia));
+
+                experienciaService.finalizarExperienciasVencidas();
+
+                assertEquals(
+                                ExperienciaAlquiler.EstadoExperiencia.CONFIRMADA,
+                                experiencia.getEstado());
+
+                verify(experienciaRepository, never())
+                                .save(any(ExperienciaAlquiler.class));
         }
 
 }

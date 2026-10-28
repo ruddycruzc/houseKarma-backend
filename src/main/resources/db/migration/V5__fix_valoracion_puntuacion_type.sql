@@ -1,0 +1,2 @@
+ALTER TABLE valoracion
+MODIFY COLUMN puntuacion INT NOT NULL;

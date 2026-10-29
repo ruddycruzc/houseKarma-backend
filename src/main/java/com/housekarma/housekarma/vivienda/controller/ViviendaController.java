@@ -60,4 +60,17 @@ public class ViviendaController {
 
         return ResponseEntity.ok(ViviendaResponse.fromEntity(vivienda));
     }
+
+    @GetMapping("/mis-viviendas")
+    public ResponseEntity<List<ViviendaResponse>> listarMisViviendas(
+            Authentication authentication) {
+
+        List<ViviendaResponse> viviendas = viviendaService
+                .listarPorCasero(authentication.getName())
+                .stream()
+                .map(ViviendaResponse::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(viviendas);
+    }
 }

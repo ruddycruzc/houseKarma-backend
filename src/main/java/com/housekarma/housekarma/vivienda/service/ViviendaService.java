@@ -19,123 +19,126 @@ import java.util.Locale;
 @Service
 public class ViviendaService {
 
-    private final ViviendaRepository viviendaRepository;
-    private final UsuarioRepository usuarioRepository;
+        private final ViviendaRepository viviendaRepository;
+        private final UsuarioRepository usuarioRepository;
 
-    public ViviendaService(
-            ViviendaRepository viviendaRepository,
-            UsuarioRepository usuarioRepository) {
-        this.viviendaRepository = viviendaRepository;
-        this.usuarioRepository = usuarioRepository;
-    }
-
-    public String normalizarDireccion(String direccion) {
-        String sinTildes = Normalizer.normalize(
-                direccion.trim(),
-                Normalizer.Form.NFD
-        ).replaceAll("\\p{M}", "");
-
-        return sinTildes
-                .replaceAll("\\s+", " ")
-                .toLowerCase(Locale.ROOT);
-    }
-
-    @Transactional
-    public Vivienda registrar(Vivienda vivienda, String emailCasero) {
-        validarVivienda(vivienda);
-
-        Usuario casero = usuarioRepository.findByEmail(emailCasero)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "No se ha encontrado el usuario autenticado"
-                ));
-
-        if (casero.getRol() != Rol.CASERO) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Solo un casero puede registrar viviendas"
-            );
+        public ViviendaService(
+                        ViviendaRepository viviendaRepository,
+                        UsuarioRepository usuarioRepository) {
+                this.viviendaRepository = viviendaRepository;
+                this.usuarioRepository = usuarioRepository;
         }
 
-        vivienda.setCasero(casero);
+        public String normalizarDireccion(String direccion) {
+                String sinTildes = Normalizer.normalize(
+                                direccion.trim(),
+                                Normalizer.Form.NFD).replaceAll("\\p{M}", "");
 
-        String direccionCompleta = String.join(", ",
-                vivienda.getDireccion().trim(),
-                vivienda.getNumero().trim(),
-                normalizarDireccion(vivienda.getLocalidad()),
-                vivienda.getCodigoPostal().trim(),
-                normalizarDireccion(vivienda.getProvincia())
-        );
-
-        String direccionNormalizada =
-                normalizarDireccion(direccionCompleta);
-
-        if (viviendaRepository.existsByDireccionNormalizada(
-                direccionNormalizada)) {
-            throw new ViviendaDuplicadaException(
-                    "La vivienda con esa dirección ya existe"
-            );
+                return sinTildes
+                                .replaceAll("\\s+", " ")
+                                .toLowerCase(Locale.ROOT);
         }
 
-        vivienda.setDireccionNormalizada(direccionNormalizada);
-        vivienda.setFechaRegistro(LocalDateTime.now());
+        @Transactional
+        public Vivienda registrar(Vivienda vivienda, String emailCasero) {
+                validarVivienda(vivienda);
 
-        return viviendaRepository.save(vivienda);
-    }
+                Usuario casero = usuarioRepository.findByEmail(emailCasero)
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No se ha encontrado el usuario autenticado"));
 
-    private void validarVivienda(Vivienda vivienda) {
-        if (vivienda == null) {
-            throw new IllegalArgumentException(
-                    "La vivienda no puede ser nula"
-            );
+                if (casero.getRol() != Rol.CASERO) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.FORBIDDEN,
+                                        "Solo un casero puede registrar viviendas");
+                }
+
+                vivienda.setCasero(casero);
+
+                String direccionCompleta = String.join(", ",
+                                vivienda.getDireccion().trim(),
+                                vivienda.getNumero().trim(),
+                                normalizarDireccion(vivienda.getLocalidad()),
+                                vivienda.getCodigoPostal().trim(),
+                                normalizarDireccion(vivienda.getProvincia()));
+
+                String direccionNormalizada = normalizarDireccion(direccionCompleta);
+
+                if (viviendaRepository.existsByDireccionNormalizada(
+                                direccionNormalizada)) {
+                        throw new ViviendaDuplicadaException(
+                                        "La vivienda con esa dirección ya existe");
+                }
+
+                vivienda.setDireccionNormalizada(direccionNormalizada);
+                vivienda.setFechaRegistro(LocalDateTime.now());
+
+                return viviendaRepository.save(vivienda);
         }
 
-        if (vivienda.getDireccion() == null
-                || vivienda.getDireccion().isBlank()) {
-            throw new IllegalArgumentException(
-                    "La dirección es obligatoria"
-            );
+        private void validarVivienda(Vivienda vivienda) {
+                if (vivienda == null) {
+                        throw new IllegalArgumentException(
+                                        "La vivienda no puede ser nula");
+                }
+
+                if (vivienda.getDireccion() == null
+                                || vivienda.getDireccion().isBlank()) {
+                        throw new IllegalArgumentException(
+                                        "La dirección es obligatoria");
+                }
+
+                if (vivienda.getNumero() == null
+                                || vivienda.getNumero().isBlank()) {
+                        throw new IllegalArgumentException(
+                                        "El número es obligatorio");
+                }
+
+                if (vivienda.getLocalidad() == null
+                                || vivienda.getLocalidad().isBlank()) {
+                        throw new IllegalArgumentException(
+                                        "La localidad es obligatoria");
+                }
+
+                if (vivienda.getCodigoPostal() == null
+                                || vivienda.getCodigoPostal().isBlank()) {
+                        throw new IllegalArgumentException(
+                                        "El código postal es obligatorio");
+                }
+
+                if (vivienda.getProvincia() == null
+                                || vivienda.getProvincia().isBlank()) {
+                        throw new IllegalArgumentException(
+                                        "La provincia es obligatoria");
+                }
         }
 
-        if (vivienda.getNumero() == null
-                || vivienda.getNumero().isBlank()) {
-            throw new IllegalArgumentException(
-                    "El número es obligatorio"
-            );
+        @Transactional(readOnly = true)
+        public List<Vivienda> listarTodas() {
+                return viviendaRepository.findAll();
         }
 
-        if (vivienda.getLocalidad() == null
-                || vivienda.getLocalidad().isBlank()) {
-            throw new IllegalArgumentException(
-                    "La localidad es obligatoria"
-            );
+        @Transactional(readOnly = true)
+        public Vivienda buscarPorId(Long id) {
+                return viviendaRepository.findById(id)
+                                .orElseThrow(() -> new ViviendaNoEncontradaException(
+                                                "No se ha encontrado la vivienda con ID: " + id));
         }
 
-        if (vivienda.getCodigoPostal() == null
-                || vivienda.getCodigoPostal().isBlank()) {
-            throw new IllegalArgumentException(
-                    "El código postal es obligatorio"
-            );
+        @Transactional(readOnly = true)
+        public List<Vivienda> listarPorCasero(String emailCasero) {
+                Usuario casero = usuarioRepository.findByEmail(emailCasero)
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No se ha encontrado el usuario autenticado"));
+
+                if (casero.getRol() != Rol.CASERO) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.FORBIDDEN,
+                                        "Solo un casero puede consultar sus viviendas");
+                }
+
+                return viviendaRepository.findAllByCaseroId(casero.getId());
         }
-
-        if (vivienda.getProvincia() == null
-                || vivienda.getProvincia().isBlank()) {
-            throw new IllegalArgumentException(
-                    "La provincia es obligatoria"
-            );
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public List<Vivienda> listarTodas() {
-        return viviendaRepository.findAll();
-    }
-
-    @Transactional(readOnly = true)
-    public Vivienda buscarPorId(Long id) {
-        return viviendaRepository.findById(id)
-                .orElseThrow(() -> new ViviendaNoEncontradaException(
-                        "No se ha encontrado la vivienda con ID: " + id
-                ));
-    }
 }

@@ -214,7 +214,7 @@ public class ExperienciaAlquilerService {
                                 .toList();
         }
 
-        @Scheduled(cron = "0 0 * * * *")
+        @Scheduled(cron = "0 * * * * *")
         @Transactional
         public void finalizarExperienciasVencidas() {
                 LocalDate hoy = LocalDate.now();
